@@ -1,0 +1,343 @@
+:host {
+  display: block;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+  padding-bottom: 100px;
+}
+:host::-webkit-scrollbar {
+  width: 6px;
+}
+:host::-webkit-scrollbar-track {
+  background: transparent;
+}
+:host::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 9999px;
+}
+:host::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.b-opted-in, .b-opted_in {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.b-opted-out, .b-opted_out {
+  background: #fff7ed;
+  color: #d97706;
+}
+
+.b-pending {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.b-frozen {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.b-active {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.act-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .13s, opacity .13s;
+}
+
+.act-lock-open {
+  color: #10b981;
+}
+.act-lock-open:hover {
+  background: #ecfdf5;
+}
+
+.act-lock-closed {
+  color: #f59e0b;
+}
+.act-lock-closed:hover {
+  background: #fffbeb;
+}
+
+/* Bulk Update Modal Tabs */
+.bulk-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+}
+.bulk-tab.active {
+  background: #fff;
+  color: #1D4ED8;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.bulk-tab.inactive {
+  background: transparent;
+  color: #6b7280;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+/* Dropzone */
+#bulk-dropzone {
+  border: 2px dashed #D1D5DB;
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: #FAFAFA;
+  transition: all 0.2s;
+}
+#bulk-dropzone:hover, #bulk-dropzone.dragover {
+  border-color: #2563EB;
+  background: #EFF6FF;
+}
+#bulk-dropzone.dragover svg {
+  color: #2563EB;
+}
+#bulk-dropzone.file-selected {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+/* Preview Table */
+.preview-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.preview-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.preview-table thead th {
+  padding: 7px 10px;
+  background: #f9fafb;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+  text-align: left;
+}
+.preview-table tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  font-size: 11px;
+  text-align: left;
+}
+.preview-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-match {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #ecfdf5;
+  color: #059669;
+  white-space: nowrap;
+}
+
+.status-notfound {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #fef2f2;
+  color: #dc2626;
+  white-space: nowrap;
+}
+
+.val-old {
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.val-arrow {
+  color: #9ca3af;
+  font-size: 10px;
+  margin: 0 2px;
+}
+
+.val-new {
+  color: #059669;
+  font-weight: 600;
+}
+
+.val-same {
+  color: #6b7280;
+}
+
+.val-change {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+/* Spinner */
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Template Row */
+.template-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+}
+
+.template-row-text {
+  font-size: 11px;
+  color: #6b7280;
+}
+.template-row-text strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.btn-template {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.13s;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-template:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.profile-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+/* Tailwind spacing fallbacks for module containers */
+.space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 4px;
+}
+.space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 6px;
+}
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 8px;
+}
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 12px;
+}
+.space-y-3\.5 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 14px;
+}
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 16px;
+}
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 24px;
+}
+
+/* Flex / Grid Gap Fallbacks */
+.gap-1 {
+  gap: 4px;
+}
+.gap-1\.5 {
+  gap: 6px;
+}
+.gap-2 {
+  gap: 8px;
+}
+.gap-2\.5 {
+  gap: 10px;
+}
+.gap-4 {
+  gap: 16px;
+}
+.gap-6 {
+  gap: 24px;
+}
+
+.modal-footer {
+  margin-top: 24px !important;
+  padding: 16px 20px !important;
+}

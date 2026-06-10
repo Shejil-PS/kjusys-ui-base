@@ -1,1 +1,37 @@
-{}
+{
+  "placement": {
+    "remoteEntry": "http://localhost:4205/remoteEntry.js",
+    "displayName": "Placement",
+    "routePath": "placement",
+    "subModule": [
+      {
+        "exposedModule": "./DashboardModule",
+        "displayName": "Dashboard",
+        "subPath": "placement/dashboard",
+        "ngModuleName": "DashboardModule",
+        "pinned": false
+      },
+      {
+        "exposedModule": "./StudentsModule",
+        "displayName": "Students",
+        "subPath": "placement/students",
+        "ngModuleName": "StudentsModule",
+        "pinned": false
+      },
+      {
+        "exposedModule": "./CompaniesModule",
+        "displayName": "Companies",
+        "subPath": "placement/companies",
+        "ngModuleName": "CompaniesModule",
+        "pinned": false
+      },
+      {
+        "exposedModule": "./DrivesModule",
+        "displayName": "Drives",
+        "subPath": "placement/drives",
+        "ngModuleName": "DrivesModule",
+        "pinned": false
+      }
+    ]
+  }
+}

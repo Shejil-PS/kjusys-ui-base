@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/app",
+    "types": []
+  },
+  "files": [
+    "src/main.ts",
+    "src/polyfills.ts",
+    "src/app/modules/dashboard/dashboard.module.ts",
+    "src/app/modules/students/students.module.ts",
+    "src/app/modules/companies/companies.module.ts",
+    "src/app/modules/drives/drives.module.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts"
+  ]
+}

@@ -1,0 +1,127 @@
+:host {
+  display: block;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+  padding-bottom: 100px;
+}
+:host::-webkit-scrollbar {
+  width: 6px;
+}
+:host::-webkit-scrollbar-track {
+  background: transparent;
+}
+:host::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 9999px;
+}
+:host::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+.company-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #e8eef8;
+  border: 1px solid #c5d5ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #1e4299;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1D1D1F;
+}
+
+.badge-tech {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.badge-finance {
+  background: #fff7ed;
+  color: #c2620c;
+}
+
+.badge-default {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all .12s;
+}
+.action-btn:hover {
+  background: #f3f4f7;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.action-btn-danger {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all .12s;
+}
+.action-btn-danger:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.profile-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+/* Tailwind spacing fallbacks for module containers */
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 12px;
+}
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 16px;
+}
+
+/* Flex / Grid Gap Fallbacks */
+.gap-2\.5 {
+  gap: 10px;
+}
+.gap-3 {
+  gap: 12px;
+}
+.gap-4 {
+  gap: 16px;
+}
+
+.modal-footer {
+  margin-top: 24px !important;
+  padding: 16px 20px !important;
+}

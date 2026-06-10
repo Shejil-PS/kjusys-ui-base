@@ -1,0 +1,689 @@
+<!-- MAIN CONTAINER -->
+<div class="px-6 py-5">
+
+  <!-- SUB-PAGE: Drives List -->
+  <div *ngIf="currentSubpage === 'list'" class="drives-subpage active">
+    <div class="breadcrumb flex items-center gap-1.5 text-gray-400 mb-1 text-xs">
+      <span>Placements</span><span>/</span>
+      <span class="text-gray-700 font-medium">Drives</span>
+    </div>
+    
+    <div class="flex items-center justify-between mb-5">
+      <h1 class="page-title text-lg font-bold text-gray-900">Drives</h1>
+    </div>
+
+    <!-- Drives Card -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      <div class="p-4 border-b border-gray-100">
+        <div class="relative w-full flex items-center">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" placeholder="Search by company or role..." class="input-search" [(ngModel)]="searchQuery" (input)="filter()" />
+        </div>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-100 text-left">
+              <th class="px-5 py-3 th-label font-semibold text-gray-500 uppercase text-[11px] tracking-wider">Company &amp; Role</th>
+              <th class="px-5 py-3 th-label font-semibold text-gray-500 uppercase text-[11px] tracking-wider">Package</th>
+              <th class="px-5 py-3 th-label font-semibold text-gray-500 uppercase text-[11px] tracking-wider">Status</th>
+              <th class="px-5 py-3 th-label font-semibold text-gray-500 uppercase text-[11px] tracking-wider">Applications</th>
+              <th class="px-5 py-3 th-label font-semibold text-gray-500 uppercase text-[11px] tracking-wider">Timeline</th>
+              <th class="px-5 py-3 th-label font-semibold text-gray-500 uppercase text-[11px] tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of filteredDrives" class="table-row border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+              <td class="px-5 py-3.5">
+                <p class="td-primary text-sm font-semibold text-gray-800">{{ d.companyName }}</p>
+                <p class="td-secondary text-xs text-gray-400">{{ d.role }} • {{ d.type }}</p>
+              </td>
+              <td class="px-5 py-3.5">
+                <p class="td-primary text-sm font-semibold text-gray-800">{{ d.packageCTC }}</p>
+                <p class="td-secondary text-xs text-gray-400">{{ d.location }}</p>
+              </td>
+              <td class="px-5 py-3.5">
+                <span class="badge" [ngClass]="'status-' + d.status">
+                  {{ d.status === 'open' ? 'Intake Open' : d.status === 'closed' ? 'Intake Closed' : 'Results Declared' }}
+                </span>
+              </td>
+              <td class="px-5 py-3.5 text-sm font-semibold text-gray-700">{{ d.applicationsCount }}</td>
+              <td class="px-5 py-3.5 text-xs text-gray-500 leading-relaxed">
+                <span class="text-gray-400">Opens:</span> {{ d.openDate }}<br/>
+                <span class="text-gray-400">Closes:</span> {{ d.closeDate }}
+              </td>
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2">
+                  <button (click)="openCandidates(d)" class="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium border border-blue-200 hover:border-blue-400 rounded-lg px-2.5 py-1.5 transition-colors text-xs">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    Candidates
+                  </button>
+                  <button (click)="openEditModal(d)" class="flex items-center gap-1 text-gray-500 hover:text-gray-700 font-medium border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1.5 transition-colors text-xs">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Edit Details
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB-PAGE: Candidates -->
+  <div *ngIf="currentSubpage === 'candidates'" class="drives-subpage active">
+    <div class="breadcrumb flex items-center gap-1.5 text-gray-400 mb-1 text-xs">
+      <span>Placements</span><span>/</span>
+      <span class="text-gray-400 cursor-pointer hover:underline hover:text-gray-600" (click)="showDrivesSubpage('list')">Drives</span>
+      <span>/</span>
+      <span class="text-gray-700 font-medium">{{ activeDrive?.companyName }}</span>
+    </div>
+    
+    <h1 class="page-title text-lg font-bold text-gray-900 mb-4">Drives</h1>
+
+    <!-- Candidates Header Summary Card -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex items-center justify-between flex-wrap gap-3 shadow-sm">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="card-title text-sm font-bold text-gray-900">{{ activeDrive?.companyName }}</span>
+          <span class="badge" [ngClass]="'status-' + activeDrive?.status">
+            {{ activeDrive?.status === 'open' ? 'Intake Open' : activeDrive?.status === 'closed' ? 'Intake Closed' : 'Results Declared' }}
+          </span>
+        </div>
+        <p class="card-subtitle text-xs text-gray-500">
+          {{ activeDrive?.role }} • {{ activeDrive?.packageCTC }} • Closes: {{ activeDrive?.closeDate }}
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button (click)="openBulkUpdateModal()" class="btn-outline flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-gray-300">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="16 17 21 12 16 7" /><path d="M21 12H9M3 12v7a2 2 0 0 0 2 2h14" />
+          </svg>
+          Bulk Update
+        </button>
+        <button (click)="openExportModal()" class="btn-outline flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-gray-300">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export Tracker
+        </button>
+        <button (click)="openSendEmailModal()" class="btn-outline flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-gray-300">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          Send Email
+        </button>
+      </div>
+    </div>
+
+    <!-- Candidates Table Card -->
+    <div class="mb-10 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      <div class="p-4 border-b border-gray-100">
+        <div class="relative w-full flex items-center">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" placeholder="Search applicants by name..." class="input-search" [ngModel]="candidateSearchQuery" (ngModelChange)="filterCandidates($event || '')" />
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-100 text-left">
+              <th class="px-4 py-3" style="width:40px;">
+                <input type="checkbox" class="row-cb" [checked]="isAllCandidatesSelected()" (change)="toggleSelectAllCandidates($event)" title="Select all" />
+              </th>
+              <th class="px-4 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider" style="width:48px;">#</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Candidate</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Register No.</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Course</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Academic Stats</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Backlogs</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Resume</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Final Status</th>
+              <th class="px-5 py-3 th-label text-gray-500 font-semibold uppercase text-[11px] tracking-wider">Update Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of getFilteredCandidates(); let i = index" class="table-row border-b border-gray-100 hover:bg-gray-50 transition-colors" [ngClass]="{'row-selected bg-blue-50/50': selectedCandidateIds.has(c.id)}">
+              <td class="px-4 py-3.5">
+                <input type="checkbox" class="row-cb candidate-cb" [checked]="selectedCandidateIds.has(c.id)" (change)="toggleSelectCandidate(c.id)" />
+              </td>
+              <td class="px-4 py-3.5 font-semibold text-gray-400 text-xs">{{ i + 1 }}</td>
+              <td class="px-5 py-3.5">
+                <p class="text-sm font-semibold text-gray-800">{{ c.name }}</p>
+                <p class="text-xs text-gray-400">Applied: {{ c.applied }}</p>
+              </td>
+              <td class="px-5 py-3.5 text-xs text-gray-600">{{ c.reg }}</td>
+              <td class="px-5 py-3.5 text-xs text-gray-600 max-w-[160px] truncate" [title]="c.course">{{ c.course }}</td>
+              <td class="px-5 py-3.5 text-xs leading-relaxed text-gray-600">
+                <span class="font-semibold text-gray-700">Agg: {{ c.agg }}</span><br/>
+                <span class="text-gray-400">10th/12th: <span class="text-gray-600">{{ c.tenth }} / {{ c.twelfth }}</span></span>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <span *ngIf="c.backlogs !== '-'" class="badge bg-red-50 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ c.backlogs }}</span>
+                <span *ngIf="c.backlogs === '-'" class="text-gray-300">—</span>
+              </td>
+              <td class="px-5 py-3.5">
+                <a *ngIf="c.resumeUrl" [href]="c.resumeUrl" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold text-xs transition-colors">View</a>
+                <span *ngIf="!c.resumeUrl" class="text-gray-300">—</span>
+              </td>
+              <td class="px-5 py-3.5">
+                <span class="badge" [style]="statusBadgeStyle[c.status || '—']">
+                  {{ statusLabel[c.status || '—'] }}
+                </span>
+              </td>
+              <td class="px-5 py-3.5">
+                <select [ngModel]="c.status" (ngModelChange)="updateCandidateStatus(i, $event)"
+                  style="font-size:12px;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;color:#4b5563;background:#fff;cursor:pointer;outline:none;">
+                  <option value="">Select Status</option>
+                  <option value="Selected">Selected</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="In Progress">In Progress</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Development Footer -->
+    <div class="mt-6 text-center text-gray-400 text-[11px]">
+      © Developed by : Software Development Centre, Kristu Jayanti (Deemed to be University), Bangalore
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL: Create New Drive
+====================================================== -->
+<div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-gray-100">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-900">Create New Drive</h2>
+      <button (click)="closeCreateModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <form class="px-6 py-5 space-y-4 text-xs" (submit)="submitDrive($event)">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Company Name</label>
+          <input type="text" placeholder="e.g. Microsoft" required [(ngModel)]="createCompany" name="company"
+            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Role</label>
+          <input type="text" placeholder="e.g. SDE" required [(ngModel)]="createRole" name="role"
+            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Type</label>
+          <select [(ngModel)]="createType" name="type" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <option>Full-Time</option><option>Internship</option><option>Part-Time</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Package</label>
+          <input type="text" placeholder="e.g. 20 LPA" required [(ngModel)]="createPackage" name="package"
+            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+      </div>
+      <div>
+        <label class="form-label block mb-1 text-gray-600 font-medium">Location</label>
+        <input type="text" placeholder="e.g. Bengaluru, India / Remote" [(ngModel)]="createLocation" name="location"
+          class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Opens</label>
+          <input type="date" [(ngModel)]="createOpens" name="opens" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Closes</label>
+          <input type="date" [(ngModel)]="createCloses" name="closes" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4 pb-4 border-t border-gray-100">
+        <button type="button" (click)="closeCreateModal()" class="btn-outline px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium">Cancel</button>
+        <button type="submit" class="btn-primary bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Create Drive</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL: Edit Drive Details
+ ====================================================== -->
+<div *ngIf="showEditModal" class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-gray-100">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-900">Edit Drive Details</h2>
+      <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <form class="px-6 py-5 space-y-4 text-xs" (submit)="submitEditDrive($event)">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Company Name</label>
+          <input type="text" required [(ngModel)]="editCompany" name="company"
+            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Role</label>
+          <input type="text" required [(ngModel)]="editRole" name="role"
+            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Type</label>
+          <select [(ngModel)]="editType" name="type" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <option>Full-Time</option><option>Internship</option><option>Part-Time</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Package</label>
+          <input type="text" required [(ngModel)]="editPackage" name="package"
+            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+      </div>
+      <div>
+        <label class="form-label block mb-1 text-gray-600 font-medium">Location</label>
+        <input type="text" [(ngModel)]="editLocation" name="location"
+          class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Opens</label>
+          <input type="date" [(ngModel)]="editOpens" name="opens" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="form-label block mb-1 text-gray-600 font-medium">Closes</label>
+          <input type="date" [(ngModel)]="editCloses" name="closes" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4 pb-4 border-t border-gray-100">
+        <button type="button" (click)="closeEditModal()" class="btn-outline px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium">Cancel</button>
+        <button type="submit" class="btn-primary bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL: Bulk Update Students — Excel Import + Manual
+ ====================================================== -->
+<div *ngIf="showBulkModal" class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
+  <div class="bg-white rounded-2xl shadow-xl w-full mx-4 overflow-hidden border border-gray-100" style="max-width:620px; max-height:92vh; display:flex; flex-direction:column;">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-sm font-semibold text-gray-900">Bulk Update Students</h2>
+      <button (click)="closeBulkUpdateModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body content -->
+    <div class="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+      
+      <!-- Selected count banner -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2.5">
+        <svg width="18" height="18" fill="none" stroke="#2563EB" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span class="text-xs text-blue-700 font-medium">
+          {{ selectedCandidateIds.size > 0 ? selectedCandidateIds.size : candidates.length }} student(s) selected for bulk update.
+        </span>
+      </div>
+
+      <!-- Tab selector -->
+      <div class="bg-gray-100 rounded-lg p-1" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));">
+        <button class="bulk-tab" [ngClass]="activeBulkTab === 'excel' ? 'active' : 'inactive'" (click)="switchBulkTab('excel')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
+          </svg>
+          Excel Import
+        </button>
+        <button class="bulk-tab" [ngClass]="activeBulkTab === 'manual' ? 'active' : 'inactive'" (click)="switchBulkTab('manual')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+          Manual Status Update
+        </button>
+      </div>
+
+      <!-- Excel Import Panel -->
+      <div *ngIf="activeBulkTab === 'excel'" class="space-y-4">
+        <!-- Download template row -->
+        <div class="template-row">
+          <div class="template-row-text text-[11px] text-gray-500">
+            <strong class="text-gray-800 font-semibold">Download Template</strong> — pre-filled with current candidate data, ready to edit &amp; re-upload.
+          </div>
+          <button (click)="downloadBulkTemplate()" class="btn-template">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download
+          </button>
+        </div>
+
+        <!-- Drag & drop zone -->
+        <div id="bulk-dropzone" 
+          [class.dragover]="isDragOver" 
+          [class.file-selected]="isFileSelected"
+          (dragover)="$event.preventDefault(); isDragOver = true;"
+          (dragleave)="isDragOver = false"
+          (drop)="$event.preventDefault(); handleBulkFileDrop($event)"
+          (click)="fileInput.click()">
+          
+          <svg width="34" height="34" fill="none" stroke="#9CA3AF" stroke-width="1.5" viewBox="0 0 24 24" class="mx-auto mb-2 text-gray-400">
+            <polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" />
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+          </svg>
+          
+          <p class="text-xs font-semibold text-gray-700 mb-0.5">Drag &amp; drop your file here, or <span class="text-blue-600 hover:underline">click to browse</span></p>
+          <p class="text-[11px] text-gray-400 mb-1">Supports .xlsx, .xls, .csv</p>
+          <p *ngIf="bulkFilename" class="text-xs text-blue-600 font-bold mt-1">{{ bulkFilename }}</p>
+          
+          <input #fileInput type="file" accept=".xlsx,.xls,.csv" style="display:none;" (change)="handleBulkFileSelect($event)" />
+        </div>
+
+        <!-- Parsing Preview table -->
+        <div *ngIf="showPreview" class="space-y-1.5">
+          <div class="preview-label text-[10px] font-bold text-gray-400 uppercase tracking-wider">Preview — {{ parsedBulkRows.length }} row(s) parsed</div>
+          <div class="preview-scroll">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Register No.</th>
+                  <th>Name</th>
+                  <th>Course</th>
+                  <th>Final Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of parsedBulkRows">
+                  <td>
+                    <span *ngIf="r._match" class="status-match">✓ Match</span>
+                    <span *ngIf="!r._match" class="status-notfound">✗ Not Found</span>
+                  </td>
+                  <td style="font-family: 'DM Mono', monospace; font-size: 10px;" class="text-gray-500 font-medium">{{ r.reg }}</td>
+                  <td>
+                    <span *ngIf="r._match && r.name && r.name !== r._match.name" class="val-change">
+                      <span class="val-old">{{ r._match.name }}</span><span class="val-arrow">→</span><span class="val-new">{{ r.name }}</span>
+                    </span>
+                    <span *ngIf="!r._match || !r.name || r.name === r._match.name" class="val-same text-gray-700">{{ r.name || '—' }}</span>
+                  </td>
+                  <td class="text-gray-500 truncate" style="max-width:140px;" [title]="r._match ? r._match.course : r.course">{{ r._match ? r._match.course : (r.course || '—') }}</td>
+                  <td>
+                    <span *ngIf="r._match && r.updateStatus && r.updateStatus !== '—' && r.updateStatus !== (r._match.status || '—')" class="val-change">
+                      <span class="val-old">{{ r._match.status || '—' }}</span><span class="val-arrow">→</span><span class="val-new">{{ r.updateStatus }}</span>
+                    </span>
+                    <span *ngIf="!r._match || !r.updateStatus || r.updateStatus === '—' || r.updateStatus === (r._match.status || '—')" class="val-same text-gray-700">{{ r.updateStatus || (r._match ? r._match.status : '—') }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual Status Update Panel -->
+      <div *ngIf="activeBulkTab === 'manual'" class="space-y-3.5 text-xs">
+        <div class="modal-field">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Final Status</label>
+          <select [(ngModel)]="bulkStatus" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <option value="">— No change —</option>
+            <option value="Selected">Selected</option>
+            <option value="Rejected">Rejected</option>
+            <option value="On Hold">On Hold</option>
+            <option value="In Progress">In Progress</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Opt-In Status</label>
+          <select [(ngModel)]="bulkOptIn" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <option value="">— No change —</option>
+            <option>Opted In</option>
+            <option>Opted Out</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Freeze Status</label>
+          <select [(ngModel)]="bulkFreeze" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+            <option value="">— No change —</option>
+            <option>Frozen</option>
+            <option>Active</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div *ngIf="bulkProgressShow" class="space-y-1">
+        <div class="progress-wrap bg-gray-100 rounded-full h-1.5 overflow-hidden">
+          <div class="progress-fill bg-blue-600 h-full rounded-full transition-all duration-300" [style.width]="bulkProgressFill + '%'"></div>
+        </div>
+        <p class="progress-label text-[11px] text-gray-400">{{ bulkProgressLabel }}</p>
+      </div>
+
+      <!-- Warning banner -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5">
+        <svg width="18" height="18" fill="none" stroke="#D97706" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0 mt-0.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <span class="text-xs text-amber-800 leading-normal">
+          This operation runs as a single transactional batch. Any failure will trigger automatic rollback to preserve data integrity.
+        </span>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="modal-footer flex justify-end gap-2 pt-3 border-t border-gray-100 flex-shrink-0">
+        <button type="button" [disabled]="bulkBusy" (click)="closeBulkUpdateModal()" class="btn-outline px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 text-xs">Cancel</button>
+        <button type="button" [disabled]="bulkBusy" (click)="applyBulkUpdate()" class="btn-primary flex items-center justify-center gap-1.5 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 min-w-[150px] text-xs">
+          <span *ngIf="bulkBusy" class="spinner border-2 border-white/30 border-t-white rounded-full w-3.5 h-3.5 animate-spin"></span>
+          <span>{{ bulkApplyLabel }}</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL: Send Email
+ ====================================================== -->
+<div *ngIf="showSendEmailModal" class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-gray-100" style="display:flex; flex-direction:column; max-height:90vh;">
+    
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-sm font-semibold text-gray-900">Send Email</h2>
+      <button (click)="closeSendEmailModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-6 py-5 space-y-4 overflow-y-auto flex-1 text-xs">
+      
+      <!-- segments count -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2.5">
+        <svg width="18" height="18" fill="none" stroke="#2563EB" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span class="text-xs text-blue-700 font-medium">
+          {{ selectedCandidateIds.size > 0 ? selectedCandidateIds.size : candidates.length }} student(s) selected as recipients.
+        </span>
+      </div>
+
+      <div class="modal-field space-y-1">
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Recipients</label>
+        <select [(ngModel)]="emailRecipientType" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+          <option>All Applicants</option>
+          <option>Selected Candidates</option>
+          <option>Rejected Candidates</option>
+          <option>On Hold Candidates</option>
+          <option>In Progress Candidates</option>
+        </select>
+      </div>
+
+      <div class="modal-field space-y-1">
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Email Template</label>
+        <select [(ngModel)]="emailTemplate" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+          <option value="">— No template —</option>
+          <option>Interview Invite</option>
+          <option>Offer Letter</option>
+          <option>Rejection Notice</option>
+          <option>Status Update</option>
+        </select>
+      </div>
+
+      <div class="modal-field space-y-1">
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
+        <input type="text" [(ngModel)]="emailSubject" placeholder="e.g. Interview Schedule for Apple Drive" 
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+      </div>
+
+      <div class="modal-field space-y-1">
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Message</label>
+        <textarea [(ngModel)]="emailMessage" rows="4" placeholder="Write your message here..." 
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none"></textarea>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5">
+        <svg width="18" height="18" fill="none" stroke="#D97706" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0 mt-0.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <span class="text-xs text-amber-800 leading-normal">
+          This operation runs as a single transactional batch. Any failure will trigger automatic rollback to preserve data integrity.
+        </span>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 flex-shrink-0">
+        <button type="button" (click)="closeSendEmailModal()" class="btn-outline px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Cancel</button>
+        <button type="button" (click)="sendEmail()" class="btn-primary flex items-center justify-center gap-1.5 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+          Send Email
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL: Export Tracker Side Panel (Sliding Drawer)
+ ====================================================== -->
+<div *ngIf="showExportModal" class="fixed inset-0 z-[900] flex">
+  <div class="flex-1 bg-black/40 backdrop-blur-[1px]" (click)="closeExportModal()"></div>
+  
+  <div class="export-panel flex flex-col h-full bg-white shadow-2xl border-l border-gray-100 relative z-10 w-[340px] max-w-[90vw] animate-[slideIn_0.25s_ease-out]">
+    
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-sm font-semibold text-gray-900">Export Tracker</h2>
+      <button (click)="closeExportModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-4 flex-1 overflow-y-auto flex flex-col gap-4 text-xs">
+      <p class="text-gray-400">Select fields to include in your export.</p>
+      
+      <div>
+        <label class="block text-gray-600 font-medium mb-1.5">Export Template</label>
+        <select [ngModel]="selectedTemplate" (ngModelChange)="onTemplateChange($event)" class="template-select w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 bg-white">
+          <option value="custom">Custom Selection</option>
+          <option value="template1">Standard Template 1</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-between font-semibold border-b border-gray-50 pb-2">
+        <span class="text-[11px] text-gray-500 uppercase tracking-wider">Data Fields</span>
+        <span class="selected-count text-[11px] text-gray-400 font-medium">{{ getSelectedFieldsCount() }} selected</span>
+      </div>
+
+      <div class="flex flex-col gap-0.5 overflow-y-auto max-h-[300px] pr-1">
+        <label *ngFor="let f of exportFields" class="field-checkbox flex items-center gap-2.5 py-1.5 text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" [(ngModel)]="f.checked" (ngModelChange)="onFieldChange(f)" class="w-3.5 h-3.5 accent-blue-600 rounded cursor-pointer" />
+          <span>{{ f.label }}</span>
+        </label>
+      </div>
+
+      <div *ngIf="showSaveCustomTemplate" class="border-t border-gray-100 pt-3 mt-1 space-y-2">
+        <p class="font-semibold text-gray-800 text-[11px]">Save Custom Template</p>
+        <input type="text" [(ngModel)]="customTemplateName" class="save-template-input w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" placeholder="e.g. Finance Batch Export" />
+        <button (click)="saveCustomTemplate()" class="btn-primary w-full justify-center flex items-center gap-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
+          </svg>
+          Save
+        </button>
+      </div>
+    </div>
+
+    <div class="px-5 py-4 border-t border-gray-100 flex flex-col gap-2 flex-shrink-0">
+      <button (click)="exportToExcel()" class="btn-primary justify-center flex items-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-xs">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Export to CSV
+      </button>
+      <button (click)="closeExportModal()" class="btn-outline justify-center w-full py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-xs font-semibold">Cancel</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- =====================================================
+     TOAST NOTIFICATIONS SYSTEM
+ ====================================================== -->
+<div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
+  <div *ngFor="let t of toasts" 
+    class="toast-item bg-slate-800 text-white px-[18px] py-3 rounded-lg text-xs font-medium shadow-lg flex items-center gap-2 transition-all duration-300 transform"
+    [ngClass]="t.show ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" 
+      [ngClass]="t.type === 'error' ? 'text-red-400' : 'text-green-400'">
+      <path *ngIf="t.type === 'error'" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <polyline *ngIf="t.type !== 'error'" points="20 6 9 17 4 12" />
+    </svg>
+    <span>{{ t.message }}</span>
+  </div>
+</div>

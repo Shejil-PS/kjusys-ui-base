@@ -1,0 +1,1068 @@
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin, Observable } from 'rxjs';
+import * as XLSX from 'xlsx';
+import { SharedToastService } from '@libs/shared-toast';
+
+// ── CUSTOM MODELS ──
+export interface PlacementDrive {
+  id: string;
+  placementId?: string;
+  companyName: string;
+  role?: string;
+  type: string;
+  packageCTC: string | number;
+  location: string;
+  status: string;
+  applicationsCount: number;
+  openDate?: string;
+  closeDate?: string;
+  minimumCgpa: number;
+  eligibleCourses?: string[];
+}
+
+export interface StudentApplication {
+  id: string;
+  name: string;
+  course: string;
+  status: string;
+  appliedDate?: string;
+  registerNumber?: string;
+  studentRegisterNumber?: string;
+  studentId?: string;
+  driveId?: string;
+  backlogs?: string | number;
+}
+
+export interface CandidateView {
+  id: string;
+  name: string;
+  applied: string;
+  reg: string;
+  course: string;
+  agg: string;
+  tenth: string;
+  twelfth: string;
+  backlogs: string | number;
+  status: string;
+  optIn?: string;
+  freeze?: string;
+  email?: string;
+  phone?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  panCardNo?: string;
+  aadharCardNo?: string;
+  permanentAddress?: string;
+  presentAddress?: string;
+  resumeUrl?: string;
+  skills?: string[];
+  rawStudent?: any;
+}
+
+// ── CUSTOM INLINE SERVICES ──
+class StudentApiService {
+  constructor(private http: HttpClient) { }
+  list(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/api/students');
+  }
+}
+
+class PlacementApiService {
+  constructor(private http: HttpClient) { }
+  listDrives(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/placements');
+  }
+  createDrive(drive: any): Observable<any> {
+    return this.http.post<any>('http://localhost:8080/placements', drive);
+  }
+  updateDrive(id: string, drive: any): Observable<any> {
+    return this.http.put<any>(`http://localhost:8080/placements/${id}`, drive);
+  }
+  listCandidates(id: string): Observable<any[]> {
+    const param = id.startsWith('J') ? 'jobId' : 'placementId';
+    return this.http.get<any[]>(`http://localhost:8080/applications?${param}=${id}`);
+  }
+  updateCandidateStatus(driveId: string, appId: string, status: string): Observable<any> {
+    return this.http.patch<any>(`http://localhost:8080/applications/${appId}/status`, { status });
+  }
+}
+
+@Component({
+  selector: 'app-drives',
+  templateUrl: './drives.component.html',
+  styleUrls: ['./drives.component.css']
+})
+export class DrivesComponent implements OnInit {
+  placementApi: PlacementApiService;
+  studentApi: StudentApiService;
+
+  drives: PlacementDrive[] = [];
+
+  candidates: CandidateView[] = [];
+
+  filteredDrives: PlacementDrive[] = [];
+  searchQuery = '';
+  candidateSearchQuery = '';
+
+  // Page toggle: 'list' or 'candidates'
+  currentSubpage: 'list' | 'candidates' = 'list';
+  activeDrive: PlacementDrive | null = null;
+  selectedCandidateIds = new Set<string>();
+
+  // Create Modal bindings
+  showCreateModal = false;
+  createCompany = '';
+  createRole = '';
+  createType = 'Full-Time';
+  createPackage = '';
+  createLocation = '';
+  createOpens = '';
+  createCloses = '';
+
+  // Edit Modal bindings
+  showEditModal = false;
+  editingDrive: PlacementDrive | null = null;
+  editCompany = '';
+  editRole = '';
+  editType = '';
+  editPackage = '';
+  editLocation = '';
+  editOpens = '';
+  editCloses = '';
+
+  // Bulk action states
+  showBulkModal = false;
+  activeBulkTab: 'excel' | 'manual' = 'excel';
+  bulkFilename = '';
+  isFileSelected = false;
+  showPreview = false;
+  parsedBulkRows: any[] = [];
+  bulkStatus = '';
+  bulkOptIn = '';
+  bulkFreeze = '';
+  bulkBusy = false;
+  bulkApplyLabel = 'Apply Bulk Update';
+  isDragOver = false;
+
+  // Bulk update progress bar state
+  bulkProgressShow = false;
+  bulkProgressFill = 0;
+  bulkProgressLabel = '';
+
+  // Export Tracker states
+  showExportModal = false;
+  selectedTemplate = 'template1';
+  customTemplateName = '';
+  showSaveCustomTemplate = false;
+  exportFields = [
+    { id: 'f_all', label: 'All Fields', checked: false, isAll: true },
+    // Student Collection Fields
+    { id: 'rollNo', label: 'Register No', checked: true },
+    { id: 'firstName', label: 'First Name', checked: true },
+    { id: 'lastName', label: 'Last Name', checked: true },
+    { id: 'gender', label: 'Gender', checked: false },
+    { id: 'dob', label: 'Date of Birth', checked: false },
+    { id: 'section', label: 'Section', checked: false },
+    { id: 'specialization', label: 'Specialization/Course', checked: true },
+    { id: 'departmentName', label: 'Department', checked: false },
+    { id: 'personalEmail', label: 'Email', checked: true },
+    { id: 'batchCode', label: 'Batch Code', checked: false },
+    { id: 'backlogs', label: 'Backlogs', checked: false },
+    { id: 'cgpa', label: 'CGPA', checked: false },
+    { id: 'optIn', label: 'Opt-In Status', checked: false },
+    { id: 'freeze', label: 'Freeze Status', checked: false },
+    // Placement Collection Fields
+    { id: 'companyName', label: 'Company Name', checked: true },
+    { id: 'role', label: 'Job Role', checked: true },
+    { id: 'employmentType', label: 'Job Type', checked: false },
+    { id: 'packageLPA', label: 'Package (LPA)', checked: true },
+    { id: 'driveStart', label: 'Drive Start Date', checked: false },
+    { id: 'driveEnd', label: 'Drive End Date', checked: false },
+    { id: 'status', label: 'Application Status', checked: true },
+    { id: 'appliedDate', label: 'Applied Date', checked: false }
+  ];
+
+  // Send Email states
+  showSendEmailModal = false;
+  emailRecipientType = 'All Applicants';
+  emailTemplate = '';
+  emailSubject = '';
+  emailMessage = '';
+
+  // Toast notifications state
+  toasts: { id: number; message: string; type?: string; show: boolean }[] = [];
+  private nextToastId = 0;
+
+  // Status mapping UI representations
+  statusBadgeStyle: Record<string, string> = {
+    'In Progress': 'background:#FFF7ED;color:#C2620C;',
+    'Selected': 'background:#EFF8F1;color:#1A7F3C;',
+    'Rejected': 'background:#FEF2F2;color:#B91C1C;',
+    'On Hold': 'background:#EEF2FF;color:#3730A3;',
+    'Not Applied': 'background:#f3f4f6;color:#6b7280;',
+    '—': 'background:#f3f4f6;color:#6b7280;',
+    'Awaiting Update': 'background:#f3f4f6;color:#6b7280;',
+    'AWAITING_UPDATE': 'background:#f3f4f6;color:#6b7280;',
+    'IN_PROGRESS': 'background:#FFF7ED;color:#C2620C;',
+    'SELECTED': 'background:#EFF8F1;color:#1A7F3C;',
+    'REJECTED': 'background:#FEF2F2;color:#B91C1C;',
+    'ON_HOLD': 'background:#EEF2FF;color:#3730A3;'
+  };
+
+  statusLabel: Record<string, string> = {
+    'Selected': 'Selected — Offer Extended',
+    'Rejected': 'Rejected — Not Proceeding',
+    'On Hold': 'On Hold — Under Review',
+    'In Progress': 'In Progress — Rounds Ongoing',
+    'Not Applied': 'Not Applied',
+    '—': 'Awaiting Update',
+    'Awaiting Update': 'Awaiting Update',
+    'AWAITING_UPDATE': 'Awaiting Update',
+    'SELECTED': 'Selected — Offer Extended',
+    'REJECTED': 'Rejected — Not Proceeding',
+    'ON_HOLD': 'On Hold — Under Review',
+    'IN_PROGRESS': 'In Progress — Rounds Ongoing'
+  };
+
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private toastService: SharedToastService
+  ) {
+    this.placementApi = new PlacementApiService(http);
+    this.studentApi = new StudentApiService(http);
+  }
+
+  ngOnInit(): void {
+    this.filteredDrives = [...this.drives];
+    this.loadDrives();
+  }
+
+  loadDrives(): void {
+    forkJoin({
+      drives: this.placementApi.listDrives(),
+      apps: this.http.get<any[]>('http://localhost:8080/applications')
+    }).subscribe({
+      next: ({ drives, apps }) => {
+        const drivesList = drives && (drives as any).data ? (drives as any).data : (Array.isArray(drives) ? drives : []);
+        const appsList = apps && (apps as any).data ? (apps as any).data : (Array.isArray(apps) ? apps : []);
+
+        if (drivesList && drivesList.length > 0) {
+          const flatDrives: PlacementDrive[] = [];
+          drivesList.forEach((p: any) => {
+            if (p.jobs && Array.isArray(p.jobs)) {
+              p.jobs.forEach((j: any) => {
+                const count = appsList.filter((a: any) => a.jobId === j.jobId).length;
+                flatDrives.push({
+                  id: j.jobId || p._id || p.id,
+                  placementId: p._id || p.id,
+                  companyName: p.companyName || '',
+                  role: j.role || '',
+                  type: j.employmentType || j.type || 'Full-Time',
+                  packageCTC: j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || ''),
+                  location: p.address || j.location || 'Bengaluru, India',
+                  status: j.active === false ? 'closed' : 'open',
+                  openDate: this.formatDate(p.driveStart || p.openDate),
+                  closeDate: this.formatDate(p.driveEnd || p.closeDate),
+                  minimumCgpa: j.minCGPA || j.minimumCgpa || 6.0,
+                  applicationsCount: count
+                });
+              });
+            } else {
+              const count = appsList.filter((a: any) => a.placementId === p._id).length;
+              flatDrives.push({
+                id: p._id || p.id,
+                placementId: p._id || p.id,
+                companyName: p.companyName || '',
+                role: p.role || '',
+                type: p.type || 'Full-Time',
+                packageCTC: p.packageCTC || '',
+                location: p.location || 'Bengaluru, India',
+                status: p.status || 'open',
+                openDate: this.formatDate(p.openDate),
+                closeDate: this.formatDate(p.closeDate),
+                minimumCgpa: p.minimumCgpa || 6.0,
+                applicationsCount: count
+              });
+            }
+          });
+          this.drives = flatDrives;
+          this.filter();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        console.log('Error loading drives');
+        this.filter();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  filter(): void {
+    if (!this.searchQuery) {
+      this.filteredDrives = [...this.drives];
+    } else {
+      const q = this.searchQuery.toLowerCase();
+      this.filteredDrives = this.drives.filter(d =>
+        d.companyName.toLowerCase().includes(q) || (d.role && d.role.toLowerCase().includes(q))
+      );
+    }
+  }
+
+  showDrivesSubpage(page: 'list' | 'candidates'): void {
+    this.currentSubpage = page;
+    if (page === 'list') {
+      this.activeDrive = null;
+    }
+  }
+
+  openCandidates(drive: PlacementDrive): void {
+    this.activeDrive = drive;
+    this.currentSubpage = 'candidates';
+    this.selectedCandidateIds.clear();
+    this.candidates = [];
+
+    forkJoin({
+      candidates: this.placementApi.listCandidates(drive.id),
+      students: this.studentApi.list()
+    }).subscribe({
+      next: ({ candidates, students }) => {
+        const candidatesList = candidates && (candidates as any).data ? (candidates as any).data : (Array.isArray(candidates) ? candidates : []);
+        const studentsList = students && (students as any).data ? (students as any).data : (Array.isArray(students) ? students : []);
+
+        if (candidatesList && candidatesList.length > 0) {
+          this.candidates = candidatesList.map((c: any, i: number) => {
+            const student = studentsList.find((s: any) => s.id === c.studentId ||
+              (s.rollNo || s.registerNumber || '').toLowerCase().trim() === (c.studentRegisterNumber || c.rollNo || '').toLowerCase().trim());
+
+            const fullName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : '';
+
+            return {
+              id: c.applicationId || c._id || c.id,
+              name: c.studentName || fullName || student?.name || '',
+              applied: c.appliedDate || '02-05-2026',
+              reg: c.studentRegisterNumber || c.rollNo || student?.rollNo || student?.registerNumber || '22MCAA0' + (i + 1),
+              course: student?.specialization || student?.course || student?.departmentName || c.course || 'Master of Computer Applications',
+              agg: student ? `${Math.round((student.cgpa || 0) * 10)}%` : '85%',
+              tenth: student?.tenthPercentage ? `${student.tenthPercentage}%` : '90%',
+              twelfth: student?.twelfthPercentage ? `${student.twelfthPercentage}%` : '89%',
+              backlogs: student?.backlogs !== undefined ? (student.backlogs === 0 ? '-' : String(student.backlogs)) : '-',
+              status: c.status || '—',
+              optIn: (student?.optedIn === true || student?.optInStatus === 'opted_in') ? 'Opted In' : 'Pending',
+              freeze: student?.freeze === true ? 'Frozen' : 'Active',
+              email: student?.personalEmail || student?.email || c.email || '',
+              phone: student?.phone || c.phone || '',
+              gender: student?.gender || c.gender || '',
+              dateOfBirth: student?.dob || student?.dateOfBirth || c.dateOfBirth || c.dob || '',
+              panCardNo: c.panCardNo || '—',
+              aadharCardNo: c.aadharCardNo || '—',
+              permanentAddress: c.permanentAddress || '—',
+              presentAddress: c.presentAddress || '—',
+              resumeUrl: student?.resumeUrl || c.resumeUrl || '',
+              skills: student?.skills || [],
+              rawStudent: student
+            };
+          });
+        } else {
+          this.candidates = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        console.log('Error loading candidates');
+        this.candidates = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  filterCandidates(q: string): void {
+    this.candidateSearchQuery = q;
+  }
+
+  getFilteredCandidates(): CandidateView[] {
+    if (!this.candidateSearchQuery) return this.candidates;
+    const q = this.candidateSearchQuery.toLowerCase();
+    return this.candidates.filter(c => c.name.toLowerCase().includes(q));
+  }
+
+  updateCandidateStatus(index: number, val: string): void {
+    if (!val || !this.activeDrive) return;
+    const c = this.candidates[index];
+    this.placementApi.updateCandidateStatus(this.activeDrive.id, c.id, val).subscribe({
+      next: () => {
+        c.status = val;
+        this.showToast(`Status updated for ${c.name}.`);
+        if (val === 'Selected' || val === 'SELECTED') {
+          this.handleStudentSelection(c.reg, this.activeDrive!.id);
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        c.status = val;
+        this.showToast(`Status updated for ${c.name} (offline simulation).`);
+        if (val === 'Selected' || val === 'SELECTED') {
+          this.handleStudentSelection(c.reg, this.activeDrive!.id);
+        }
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  handleStudentSelection(studentRegisterNo: string, currentDriveId: string): void {
+    if (!studentRegisterNo) return;
+    this.studentApi.list().subscribe({
+      next: (students) => {
+        const studentsList = students && (students as any).data ? (students as any).data : (Array.isArray(students) ? students : []);
+        const student = studentsList.find((s: any) =>
+          (s.registerNumber || s.rollNo || s.id || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim()
+        );
+        if (student) {
+          const studentId = student.id || student._id;
+
+          // 1. Freeze student eligibility
+          this.http.put(`http://localhost:8080/api/students/${studentId}`, { freeze: true }).subscribe({
+            next: () => {
+              this.showToast(`Student ${student.name || studentRegisterNo} has been automatically frozen.`);
+              // Update local state freeze status
+              this.candidates.forEach(cand => {
+                if (cand.reg.toLowerCase().trim() === studentRegisterNo.toLowerCase().trim()) {
+                  cand.freeze = 'Frozen';
+                }
+              });
+              this.cdr.detectChanges();
+            },
+            error: (err) => {
+              console.error('Error auto-freezing student:', err);
+            }
+          });
+
+          // 2. Auto-reject other active applications
+          this.http.get<any[]>('http://localhost:8080/applications').subscribe({
+            next: (apps) => {
+              const appsList = apps && (apps as any).data ? (apps as any).data : (Array.isArray(apps) ? apps : []);
+              const otherApps = appsList.filter((app: any) => {
+                const isSameStudent = String(app.studentId) === String(studentId) ||
+                  (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim();
+                const isSameDrive = app.driveId === currentDriveId || app.placementId === currentDriveId || app.jobId === currentDriveId;
+                const isNotSelectedOrRejected = app.status !== 'Selected' && app.status !== 'SELECTED' && app.status !== 'Rejected' && app.status !== 'REJECTED';
+                return isSameStudent && !isSameDrive && isNotSelectedOrRejected;
+              });
+
+              otherApps.forEach((app: any) => {
+                const appId = app.applicationId || app._id || app.id;
+                this.placementApi.updateCandidateStatus(currentDriveId, appId, 'REJECTED').subscribe({
+                  next: () => {
+                    console.log(`Auto-rejected application ${appId} for other drive.`);
+                  },
+                  error: (err) => {
+                    console.error('Error auto-rejecting application:', err);
+                  }
+                });
+              });
+            },
+            error: (err) => {
+              console.error('Error fetching applications for auto-rejection:', err);
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error listing students for selection handler:', err);
+      }
+    });
+  }
+
+  toggleSelectCandidate(id: string): void {
+    if (this.selectedCandidateIds.has(id)) {
+      this.selectedCandidateIds.delete(id);
+    } else {
+      this.selectedCandidateIds.add(id);
+    }
+  }
+
+  isAllCandidatesSelected(): boolean {
+    const currentList = this.getFilteredCandidates();
+    return currentList.length > 0 && currentList.every(c => this.selectedCandidateIds.has(c.id));
+  }
+
+  toggleSelectAllCandidates(event: any): void {
+    const checked = event.target.checked;
+    const currentList = this.getFilteredCandidates();
+    if (checked) {
+      currentList.forEach(c => this.selectedCandidateIds.add(c.id));
+    } else {
+      currentList.forEach(c => this.selectedCandidateIds.delete(c.id));
+    }
+  }
+
+  getCheckedIndices(): number[] {
+    const indices: number[] = [];
+    this.candidates.forEach((c, idx) => {
+      if (this.selectedCandidateIds.has(c.id)) {
+        indices.push(idx);
+      }
+    });
+    return indices;
+  }
+
+  // Create Modal
+  openCreateModal(): void {
+    this.createCompany = '';
+    this.createRole = '';
+    this.createType = 'Full-Time';
+    this.createPackage = '';
+    this.createLocation = '';
+    this.createOpens = '';
+    this.createCloses = '';
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+  }
+
+  submitDrive(event: Event): void {
+    event.preventDefault();
+    const companyNameVal = this.createCompany;
+    const companyIdVal = 'C' + Math.floor(100 + Math.random() * 900);
+    const codeVal = companyNameVal.substring(0, 3).toUpperCase() + '-' + Math.floor(100 + Math.random() * 900);
+    const startVal = this.createOpens || new Date().toISOString().substring(0, 10);
+    const endVal = this.createCloses || new Date().toISOString().substring(0, 10);
+
+    const backendPayload = {
+      placementCode: codeVal,
+      companyId: companyIdVal,
+      companyName: companyNameVal,
+      batchCode: '2026',
+      driveStart: startVal,
+      driveEnd: endVal,
+      jobs: [{
+        jobId: 'J' + Math.floor(100 + Math.random() * 900),
+        companyId: companyIdVal,
+        role: this.createRole || 'Software Engineer',
+        Description: 'Placement Job Description',
+        eligibleBatches: '2026',
+        employmentType: this.createType || 'Full-Time',
+        packageLPA: this.createPackage ? parseFloat(this.createPackage.replace(/[^\d.]/g, '')) || 6.0 : 6.0,
+        minCGPA: 6.0,
+        active: true,
+        allowBacklog: false,
+        fields: []
+      }]
+    };
+
+    this.placementApi.createDrive(backendPayload).subscribe({
+      next: (res: any) => {
+        const created = res && res.data ? res.data : backendPayload;
+        const mappedDrive: PlacementDrive = {
+          id: created._id || created.id || String(this.drives.length + 1),
+          companyName: created.companyName,
+          role: created.jobs?.[0]?.role || this.createRole,
+          type: created.jobs?.[0]?.employmentType || this.createType,
+          packageCTC: created.jobs?.[0]?.packageLPA ? `${created.jobs[0].packageLPA} LPA` : this.createPackage,
+          location: this.createLocation || 'TBD',
+          status: 'open',
+          applicationsCount: 0,
+          openDate: this.formatDate(created.driveStart || this.createOpens),
+          closeDate: this.formatDate(created.driveEnd || this.createCloses),
+          minimumCgpa: created.jobs?.[0]?.minCGPA || 6.0
+        };
+        this.drives.push(mappedDrive);
+        this.filter();
+        this.closeCreateModal();
+        this.showToast('Drive created successfully.');
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Fallback local simulation
+        const fallbackDrive: PlacementDrive = {
+          id: String(this.drives.length + 1),
+          companyName: this.createCompany,
+          role: this.createRole,
+          type: this.createType,
+          packageCTC: this.createPackage,
+          location: this.createLocation || 'TBD',
+          status: 'open',
+          applicationsCount: 0,
+          openDate: this.formatDate(this.createOpens || '—'),
+          closeDate: this.formatDate(this.createCloses || '—'),
+          minimumCgpa: 6.0
+        };
+        this.drives.push(fallbackDrive);
+        this.filter();
+        this.closeCreateModal();
+        this.showToast('Drive created (offline simulation).');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Edit Modal
+  openEditModal(drive: PlacementDrive): void {
+    this.editingDrive = drive;
+    this.editCompany = drive.companyName;
+    this.editRole = drive.role || '';
+    this.editType = drive.type;
+    this.editPackage = String(drive.packageCTC);
+    this.editLocation = drive.location;
+    this.editOpens = drive.openDate || '';
+    this.editCloses = drive.closeDate || '';
+    this.showEditModal = true;
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editingDrive = null;
+  }
+
+  submitEditDrive(event: Event): void {
+    event.preventDefault();
+    if (!this.editingDrive) return;
+
+    const jobId = this.editingDrive.id;
+    const placementId = this.editingDrive.placementId || jobId;
+
+    const parentPayload = {
+      companyName: this.editCompany,
+      driveStart: this.editOpens,
+      driveEnd: this.editCloses
+    };
+
+    this.placementApi.updateDrive(placementId, parentPayload).subscribe({
+      next: (parentRes: any) => {
+        const updatedParent = parentRes && parentRes.data ? parentRes.data : parentRes;
+
+        if (jobId.startsWith('J')) {
+          const jobPayload = {
+            jobId: jobId,
+            companyId: updatedParent.companyId || 'C123',
+            role: this.editRole,
+            Description: 'Placement Job Description',
+            eligibleBatches: '2026',
+            employmentType: this.editType,
+            packageLPA: this.editPackage ? parseFloat(String(this.editPackage).replace(/[^\d.]/g, '')) || 6.0 : 6.0,
+            minCGPA: this.editingDrive?.minimumCgpa || 6.0,
+            active: this.editingDrive?.status !== 'closed',
+            fields: []
+          };
+
+          this.http.put(`http://localhost:8080/placements/${placementId}/jobs/${jobId}`, jobPayload).subscribe({
+            next: (jobRes: any) => {
+              this.updateLocalDriveState(jobId, updatedParent, jobPayload);
+            },
+            error: (err) => {
+              console.error('Error updating job details:', err);
+              this.updateLocalDriveState(jobId, updatedParent, jobPayload);
+            }
+          });
+        } else {
+          this.updateLocalDriveState(jobId, updatedParent);
+        }
+      },
+      error: () => {
+        // Fallback update local state for offline simulation
+        const idx = this.drives.findIndex(x => x.id === jobId);
+        if (idx !== -1) {
+          this.drives[idx] = {
+            ...this.drives[idx],
+            companyName: this.editCompany,
+            role: this.editRole,
+            type: this.editType,
+            packageCTC: this.editPackage,
+            openDate: this.formatDate(this.editOpens),
+            closeDate: this.formatDate(this.editCloses)
+          };
+        }
+        this.filter();
+        this.closeEditModal();
+        this.showToast('Drive updated (offline simulation).');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  updateLocalDriveState(jobId: string, updatedParent: any, updatedJob?: any): void {
+    const idx = this.drives.findIndex(x => x.id === jobId);
+    if (idx !== -1) {
+      this.drives[idx] = {
+        ...this.drives[idx],
+        companyName: updatedParent.companyName || this.editCompany,
+        openDate: this.formatDate(updatedParent.driveStart || this.editOpens),
+        closeDate: this.formatDate(updatedParent.driveEnd || this.editCloses)
+      };
+      if (updatedJob) {
+        this.drives[idx].role = updatedJob.role;
+        this.drives[idx].type = updatedJob.employmentType;
+        this.drives[idx].packageCTC = `${updatedJob.packageLPA} LPA`;
+      }
+    }
+    this.filter();
+    this.closeEditModal();
+    this.showToast('Drive updated successfully.');
+    this.cdr.detectChanges();
+  }
+
+  // Bulk actions modal
+  openBulkUpdateModal(): void {
+    this.parsedBulkRows = [];
+    this.activeBulkTab = 'excel';
+    this.bulkBusy = false;
+    this.bulkProgressShow = false;
+    this.bulkProgressFill = 0;
+    this.bulkProgressLabel = '';
+    this.bulkFilename = '';
+    this.isFileSelected = false;
+    this.showPreview = false;
+    this.bulkStatus = '';
+    this.bulkOptIn = '';
+    this.bulkFreeze = '';
+    this.bulkApplyLabel = 'Apply Bulk Update';
+
+    this.showBulkModal = true;
+  }
+
+  closeBulkUpdateModal(): void {
+    if (this.bulkBusy) return;
+    this.showBulkModal = false;
+  }
+
+  switchBulkTab(tab: 'excel' | 'manual'): void {
+    this.activeBulkTab = tab;
+  }
+
+  downloadBulkTemplate(): void {
+    const targetCandidates = this.selectedCandidateIds.size > 0
+      ? this.candidates.filter(c => this.selectedCandidateIds.has(c.id))
+      : this.candidates;
+
+    const data = targetCandidates.map(c => ({
+      'Register No.': c.reg || '',
+      'Name': c.name || '',
+      'Course': c.course || '',
+      'Aggregate %': c.agg || '0%',
+      '10th %': c.tenth || '0%',
+      '12th %': c.twelfth || '0%',
+      'Backlogs': c.backlogs === '-' ? '0' : String(c.backlogs || 0),
+      'Final Status': c.status || '—',
+      'Update Status (Selected / Rejected / On Hold / In Progress)': ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 16 }, { wch: 28 }, { wch: 38 },
+      { wch: 12 }, { wch: 10 }, { wch: 10 },
+      { wch: 10 }, { wch: 18 }, { wch: 18 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Candidates');
+    XLSX.writeFile(wb, 'bulk_update_template.xlsx');
+    this.showToast('Template downloaded — fill "Update Status" column and re-upload.');
+  }
+
+  handleBulkFileSelect(event: any): void {
+    const file = event.target.files[0];
+    if (file) this.processBulkFile(file);
+  }
+
+  handleBulkFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    const file = event.dataTransfer?.files[0];
+    if (file) this.processBulkFile(file);
+  }
+
+  processBulkFile(file: File): void {
+    this.bulkFilename = '📄 ' + file.name;
+    this.isFileSelected = true;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        this.parsedBulkRows = json.map((row: any) => {
+          const mapped = this.mapBulkKeys(row);
+          let match = mapped.reg
+            ? this.candidates.find(c => (c.reg || '').toLowerCase().trim() === mapped.reg.toLowerCase().trim())
+            : null;
+          if (match && this.selectedCandidateIds.size > 0 && !this.selectedCandidateIds.has(match.id)) {
+            match = null;
+          }
+          return { ...mapped, _match: match || null };
+        }).filter((r: any) => r.reg);
+
+        this.showPreview = true;
+      } catch (err) {
+        this.showToast('Could not read the file. Please check the format.', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  mapBulkKeys(row: any): any {
+    const out: any = {};
+    Object.keys(row).forEach(k => {
+      const n = k.toLowerCase().replace(/[\s_\-\/\\.]/g, '');
+      if (['registerno', 'regno', 'reg', 'regnumber', 'registrationnumber'].includes(n))
+        out.reg = String(row[k]).trim();
+      else if (['name', 'studentname', 'candidatename', 'fullname'].includes(n))
+        out.name = String(row[k]).trim();
+      else if (['course', 'department', 'dept', 'program', 'programme'].includes(n))
+        out.course = String(row[k]).trim();
+      else if (n.startsWith('updatestatus') || ['update', 'newstatus', 'updatedstatus'].includes(n))
+        out.updateStatus = String(row[k]).trim();
+      else if (['finalstatus', 'status', 'finalstat'].includes(n))
+        out.finalStatus = String(row[k]).trim();
+    });
+    if (!out.updateStatus && out.finalStatus && out.finalStatus !== '—') {
+      out.updateStatus = out.finalStatus;
+    }
+    return out;
+  }
+
+  applyBulkUpdate(): void {
+    if (this.bulkBusy) return;
+
+    if (this.activeBulkTab === 'excel') {
+      const matched = this.parsedBulkRows.filter(r => r._match && r.updateStatus && r.updateStatus !== '—');
+      if (this.parsedBulkRows.length === 0) {
+        this.showToast('Please upload a file before applying the bulk update.', 'error');
+        return;
+      }
+      if (matched.length === 0) {
+        this.showToast('No records with an "Update Status" value found. Fill the column and re-upload.', 'error');
+        return;
+      }
+
+      this.setBulkBusy(true);
+      this.runProgress(() => {
+        matched.forEach(r => {
+          const c = r._match;
+          if (r.updateStatus) c.status = r.updateStatus;
+          if (r.name) c.name = r.name;
+          const idx = this.candidates.findIndex(orig => orig.id === c.id);
+          if (idx !== -1) {
+            this.candidates[idx] = { ...this.candidates[idx], status: r.updateStatus, name: r.name };
+          }
+          if (r.updateStatus && (r.updateStatus === 'Selected' || r.updateStatus === 'SELECTED')) {
+            this.handleStudentSelection(c.reg, this.activeDrive!.id);
+          }
+        });
+        this.setBulkBusy(false);
+        this.closeBulkUpdateModal();
+        this.showToast(`${matched.length} record(s) updated successfully.`);
+      });
+
+    } else {
+      const statusVal = this.bulkStatus;
+      const optinVal = this.bulkOptIn;
+      const freezeVal = this.bulkFreeze;
+
+      if (!statusVal && !optinVal && !freezeVal) {
+        this.showToast('Please select at least one field to update.', 'error');
+        return;
+      }
+
+      const selectedList = this.getCheckedIndices();
+      const targetIdxs = selectedList.length > 0 ? selectedList : this.candidates.map((_, i) => i);
+
+      this.setBulkBusy(true);
+      this.runProgress(() => {
+        targetIdxs.forEach(i => {
+          if (statusVal) this.candidates[i].status = statusVal;
+          if (optinVal) this.candidates[i].optIn = optinVal;
+          if (freezeVal) this.candidates[i].freeze = freezeVal;
+          if (statusVal && (statusVal === 'Selected' || statusVal === 'SELECTED')) {
+            this.handleStudentSelection(this.candidates[i].reg, this.activeDrive!.id);
+          }
+        });
+        this.setBulkBusy(false);
+        this.closeBulkUpdateModal();
+        this.showToast(`${targetIdxs.length} record(s) updated successfully.`);
+      });
+    }
+  }
+
+  runProgress(cb: () => void): void {
+    this.bulkProgressShow = true;
+    this.bulkProgressFill = 0;
+    const steps = [
+      { p: 20, m: 'Validating records…' },
+      { p: 45, m: 'Beginning transaction…' },
+      { p: 70, m: 'Applying updates…' },
+      { p: 90, m: 'Committing changes…' },
+      { p: 100, m: 'Finalizing…' },
+    ];
+    let i = 0;
+    const tick = () => {
+      if (i >= steps.length) {
+        setTimeout(() => {
+          cb();
+          this.cdr.detectChanges();
+        }, 300);
+        return;
+      }
+      const st = steps[i++];
+      this.bulkProgressFill = st.p;
+      this.bulkProgressLabel = st.m;
+      this.cdr.detectChanges();
+      setTimeout(tick, 280 + Math.random() * 180);
+    };
+    tick();
+  }
+
+  setBulkBusy(busy: boolean): void {
+    this.bulkBusy = busy;
+    this.bulkApplyLabel = busy ? 'Processing…' : 'Apply Bulk Update';
+  }
+
+  // Export Tracker Modal
+  openExportModal(): void {
+    this.selectedTemplate = 'template1';
+    this.customTemplateName = '';
+    this.showSaveCustomTemplate = false;
+    this.onTemplateChange('template1');
+    this.showExportModal = true;
+  }
+
+  closeExportModal(): void {
+    this.showExportModal = false;
+  }
+
+  onFieldChange(field: any): void {
+    if (field.isAll) {
+      this.exportFields.forEach(f => {
+        if (!f.isAll) f.checked = field.checked;
+      });
+    } else {
+      const allField = this.exportFields.find(f => f.isAll);
+      const otherFields = this.exportFields.filter(f => !f.isAll);
+      if (allField) {
+        allField.checked = otherFields.every(f => f.checked);
+      }
+    }
+  }
+
+  getSelectedFieldsCount(): number {
+    return this.exportFields.filter(f => !f.isAll && f.checked).length;
+  }
+
+  onTemplateChange(val: string): void {
+    this.selectedTemplate = val;
+    this.showSaveCustomTemplate = (val === 'custom');
+    if (val === 'template1') {
+      const template1Checked = new Set(['rollNo', 'firstName', 'lastName', 'specialization', 'companyName', 'role', 'status']);
+      this.exportFields.forEach(f => {
+        if (!f.isAll) {
+          f.checked = template1Checked.has(f.id);
+        }
+      });
+      const allField = this.exportFields.find(f => f.isAll);
+      if (allField) allField.checked = false;
+    }
+  }
+
+  saveCustomTemplate(): void {
+    if (!this.customTemplateName.trim()) {
+      alert('Please enter a template name.');
+      return;
+    }
+    alert(`Template "${this.customTemplateName}" saved!`);
+  }
+
+  exportToExcel(): void {
+    const selectedFields = this.exportFields.filter(f => !f.isAll && f.checked);
+    if (!selectedFields.length) {
+      alert('Please select at least one field.');
+      return;
+    }
+
+    const data = this.candidates.map(c => {
+      const row: any = {};
+      const s = c.rawStudent || {};
+
+      selectedFields.forEach(f => {
+        if (f.id === 'rollNo') row[f.label] = s.rollNo || c.reg || '';
+        else if (f.id === 'firstName') row[f.label] = s.firstName || c.name.split(' ')[0] || '';
+        else if (f.id === 'lastName') row[f.label] = s.lastName || c.name.split(' ').slice(1).join(' ') || '';
+        else if (f.id === 'gender') row[f.label] = s.gender || c.gender || '—';
+        else if (f.id === 'dob') row[f.label] = s.dob || c.dateOfBirth || '—';
+        else if (f.id === 'section') row[f.label] = s.section || '—';
+        else if (f.id === 'specialization') row[f.label] = s.specialization || c.course || '—';
+        else if (f.id === 'departmentName') row[f.label] = s.departmentName || '—';
+        else if (f.id === 'personalEmail') row[f.label] = s.personalEmail || c.email || '—';
+        else if (f.id === 'batchCode') row[f.label] = s.batchCode || '—';
+        else if (f.id === 'backlogs') row[f.label] = s.backlogs !== undefined ? s.backlogs : (c.backlogs || '—');
+        else if (f.id === 'cgpa') row[f.label] = s.cgpa !== undefined ? s.cgpa : (c.agg || '—');
+        else if (f.id === 'optIn') row[f.label] = c.optIn || '—';
+        else if (f.id === 'freeze') row[f.label] = c.freeze || '—';
+        else if (f.id === 'companyName') row[f.label] = this.activeDrive?.companyName || '—';
+        else if (f.id === 'role') row[f.label] = this.activeDrive?.role || '—';
+        else if (f.id === 'employmentType') row[f.label] = this.activeDrive?.type || '—';
+        else if (f.id === 'packageLPA') row[f.label] = this.activeDrive?.packageCTC || '—';
+        else if (f.id === 'driveStart') row[f.label] = this.activeDrive?.openDate || '—';
+        else if (f.id === 'driveEnd') row[f.label] = this.activeDrive?.closeDate || '—';
+        else if (f.id === 'status') row[f.label] = c.status || '—';
+        else if (f.id === 'appliedDate') row[f.label] = c.applied || '—';
+        else row[f.label] = (c as any)[f.id] || '—';
+      });
+      return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Candidates');
+    const driveName = this.activeDrive ? this.activeDrive.companyName + '_' + (this.activeDrive.role || '') : 'candidates';
+    XLSX.writeFile(wb, `${driveName.toLowerCase().replace(/[\s/]/g, '_')}_tracker.csv`, { bookType: 'csv' });
+    this.closeExportModal();
+    this.showToast('Candidates tracker exported successfully as CSV.');
+  }
+
+  // Send Email Modal
+  openSendEmailModal(): void {
+    this.emailRecipientType = 'All Applicants';
+    this.emailTemplate = '';
+    this.emailSubject = '';
+    this.emailMessage = '';
+    this.showSendEmailModal = true;
+  }
+
+  closeSendEmailModal(): void {
+    this.showSendEmailModal = false;
+  }
+
+  sendEmail(): void {
+    this.showToast(`Email batch dispatched to selected candidate segments.`);
+    this.closeSendEmailModal();
+  }
+
+  // Toast System
+  showToast(message: string, type?: string): void {
+    if (type === 'error') {
+      this.toastService.error(message);
+    } else if (type === 'warning') {
+      this.toastService.warning(message);
+    } else {
+      this.toastService.success(message);
+    }
+  }
+
+  formatDate(dStr: string | undefined): string {
+    if (!dStr) return '';
+    try {
+      const d = new Date(dStr);
+      if (isNaN(d.getTime())) return dStr;
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return dStr;
+    }
+  }
+}

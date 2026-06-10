@@ -1,0 +1,630 @@
+<div class="px-6 pb-5" style="padding-top: 30px; box-sizing: border-box;">
+  <!-- Breadcrumb + Title + Buttons -->
+  <div class="flex items-end justify-between" style="margin-bottom: 28px;">
+    <div>
+      <nav class="flex items-center gap-4 text-xs text-gray-400 mb-1">
+        <span>Placements</span>
+        <span class="text-gray-300">/</span>
+        <span class="text-gray-800 font-medium">Home</span>
+      </nav>
+      <h1 class="font-bold text-[18px] text-black">Home</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <select 
+        [(ngModel)]="selectedAcademicYear"
+        (change)="calculateStats()"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 cursor-pointer">
+        <option *ngFor="let year of academicYears" [value]="year">Academic Year: {{ year }}</option>
+      </select>
+      <button (click)="toggleReports()" class="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap">
+        <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 17v-2m3 2v-4m3 4v-6M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"/></svg>
+        Reports
+        <svg class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" [class.rotate-90]="reportsOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <button (click)="openWizard()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Create Placement Drive
+      </button>
+    </div>
+  </div>
+
+  <!-- TWO-COLUMN SPLIT -->
+  <div class="flex items-stretch" style="gap: 24px;">
+    <!-- LEFT COLUMN (Stat Cards + Charts Row) -->
+    <div class="flex-grow flex flex-col min-w-0" style="gap: 24px;">
+      <!-- STAT CARDS -->
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px;">
+        <app-card title="Opted-in Students" [value]="stats.optedInStudents | number" variant="blue" iconClass="bg-blue-50">
+          <svg card-icon xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </app-card>
+
+        <app-card title="Drives this year" [value]="stats.drivesThisYear | number" variant="purple" iconClass="bg-purple-50">
+          <svg card-icon width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+            <path d="M13.3333 16.6667V3.33332C13.3333 2.8913 13.1577 2.46737 12.8452 2.15481C12.5326 1.84225 12.1087 1.66666 11.6667 1.66666H8.33332C7.8913 1.66666 7.46737 1.84225 7.15481 2.15481C6.84225 2.46737 6.66666 2.8913 6.66666 3.33332V16.6667" stroke="#9810FA" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16.6667 5H3.33332C2.41285 5 1.66666 5.74619 1.66666 6.66667V15C1.66666 15.9205 2.41285 16.6667 3.33332 16.6667H16.6667C17.5871 16.6667 18.3333 15.9205 18.3333 15V6.66667C18.3333 5.74619 17.5871 5 16.6667 5Z" stroke="#9810FA" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </app-card>
+
+        <app-card title="Total Placed" [value]="stats.totalPlaced | number" variant="orange" iconClass="bg-orange-50">
+          <svg card-icon width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+            <path d="M17.85 9.10168C17.9992 9.03587 18.1258 8.92774 18.2141 8.79068C18.3025 8.65363 18.3486 8.49367 18.347 8.33063C18.3453 8.16758 18.2958 8.00862 18.2046 7.87342C18.1135 7.73822 17.9847 7.63273 17.8342 7.57001L10.6917 4.31668C10.4745 4.21764 10.2387 4.16638 10 4.16638C9.76136 4.16638 9.52548 4.21764 9.30835 4.31668L2.16668 7.56668C2.01832 7.63166 1.89211 7.73846 1.80349 7.87403C1.71486 8.00959 1.66766 8.16805 1.66766 8.33001C1.66766 8.49198 1.71486 8.65043 1.80349 8.786C1.89211 8.92157 2.01832 9.02837 2.16668 9.09335L9.30835 12.35C9.52548 12.4491 9.76136 12.5003 10 12.5003C10.2387 12.5003 10.4745 12.4491 10.6917 12.35L17.85 9.10168Z" stroke="#F54900" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18.3333 8.33334V13.3333" stroke="#F54900" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 10.4167V13.3333C5 13.9964 5.52678 14.6322 6.46447 15.1011C7.40215 15.5699 8.67392 15.8333 10 15.8333C11.3261 15.8333 12.5979 15.5699 13.5355 15.1011C14.4732 14.6322 15 13.9964 15 13.3333V10.4167" stroke="#F54900" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </app-card>
+
+        <app-card title="Placement Rate" [value]="stats.placementRate" subtitle="of opted-in pool" variant="green" iconClass="bg-green-50">
+          <svg card-icon width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+            <path d="M15.8333 4.16666L4.16663 15.8333" stroke="#00A63E" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5.41671 7.50001C6.5673 7.50001 7.50004 6.56727 7.50004 5.41668C7.50004 4.26608 6.5673 3.33334 5.41671 3.33334C4.26611 3.33334 3.33337 4.26608 3.33337 5.41668C3.33337 6.56727 4.26611 7.50001 5.41671 7.50001Z" stroke="#00A63E" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.5833 16.6667C15.7339 16.6667 16.6667 15.7339 16.6667 14.5833C16.6667 13.4327 15.7339 12.5 14.5833 12.5C13.4327 12.5 12.5 13.4327 14.5833 14.5833C14.5833 15.7339 13.4327 16.6667 14.5833 16.6667Z" stroke="#00A63E" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </app-card>
+
+        <app-card title="Companies" [value]="stats.companies | number" variant="teal" iconClass="bg-sky-50">
+          <svg card-icon width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+            <g clip-path="url(#clip0_1_1843)">
+              <path d="M5 18.3333V3.33332C5 2.8913 5.17559 2.46737 5.48816 2.15481C5.80072 1.84225 6.22464 1.66666 6.66667 1.66666H13.3333C13.7754 1.66666 14.1993 1.84225 14.5118 2.15481C14.8244 2.46737 15 2.8913 15 3.33332V18.3333H5Z" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4.99996 10H3.33329C2.89127 10 2.46734 10.1756 2.15478 10.4882C1.84222 10.8007 1.66663 11.2246 1.66663 11.6667V16.6667C1.66663 17.1087 1.84222 17.5326 2.15478 17.8452C2.46734 18.1577 2.89127 18.3333 3.33329 18.3333H4.99996" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 7.5H16.6667C17.1087 7.5 17.5326 7.6756 17.8452 7.98816C18.1577 8.30072 18.3333 8.72464 18.3333 9.16667V16.6667C18.3333 17.1087 18.1577 17.5326 17.8452 17.8452C17.5326 18.1577 17.1087 18.3333 16.6667 18.3333H15" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8.33337 5H11.6667" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8.33337 8.33334H11.6667" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8.33337 11.6667H11.6667" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8.33337 15H11.6667" stroke="#00AAFF" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+            <defs>
+              <clipPath id="clip0_1_1843">
+                <rect width="20" height="20" fill="white"/>
+              </clipPath>
+            </defs>
+          </svg>
+        </app-card>
+      </div>
+
+      <!-- CHARTS ROW (Placement Trends + Top Recruiters) -->
+      <div style="display: flex; gap: 24px; align-items: stretch; width: 100%;">
+        <!-- Placement Trends Card -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between" style="flex: 1; min-w: 0; min-height: 295px;">
+          <div>
+            <h3 class="font-bold text-[16px] text-gray-900 mb-0.5">Placement Trends</h3>
+            <p class="text-xs text-gray-400">Cumulative offers accepted over time</p>
+          </div>
+          
+          <div class="flex items-stretch gap-3 mt-4" style="height: 165px;">
+            <!-- Y-Axis Labels -->
+            <div class="flex flex-col justify-between text-right text-xs font-semibold text-gray-400" style="padding-top: 15px; padding-bottom: 25px; width: 24px; line-height: 1;">
+              <span *ngFor="let val of chartYLabels">{{ val }}</span>
+            </div>
+            
+            <!-- Chart Container -->
+            <div class="flex-grow flex flex-col justify-between h-full">
+              <!-- SVG Plot Area -->
+              <div class="relative flex-grow w-full overflow-hidden" style="height: 120px; border-bottom: 1.5px solid #e5e7eb;">
+                <svg class="w-full h-full" viewBox="0 0 460 120" preserveAspectRatio="none" style="display: block;">
+                  <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.3" />
+                      <stop offset="100%" stop-color="#818CF8" stop-opacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Horizontal Grid lines -->
+                  <line x1="0" y1="20" x2="460" y2="20" stroke="#f3f4f6" stroke-width="1" />
+                  <line x1="0" y1="40" x2="460" y2="40" stroke="#f3f4f6" stroke-width="1" />
+                  <line x1="0" y1="60" x2="460" y2="60" stroke="#f3f4f6" stroke-width="1" />
+                  <line x1="0" y1="80" x2="460" y2="80" stroke="#f3f4f6" stroke-width="1" />
+
+                  <!-- Fill Area -->
+                  <path [attr.d]="chartAreaPath" fill="url(#chartGrad)" />
+
+                  <!-- Stroke curve line -->
+                  <path [attr.d]="chartLinePath" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              
+              <!-- X-Axis Labels -->
+              <div class="flex justify-between text-[11px] font-semibold text-gray-400 mt-2 px-1">
+                <span *ngFor="let p of chartPoints">{{ p.month }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Recruiters Card -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col" style="flex: 1; min-w: 0; min-height: 295px;">
+          <div>
+            <h3 class="font-bold text-[16px] text-gray-900 mb-0.5">Top Recruiters</h3>
+            <p class="text-xs text-gray-400">Leading recruiting partners</p>
+          </div>
+          
+          <div class="space-y-2 mt-4">
+            <div *ngFor="let recruiter of topRecruiters; let i = index" class="flex items-center justify-between bg-gray-50/70 rounded-xl px-4 py-2.5">
+              <div class="flex items-center gap-3">
+                <div [class]="'rank-badge rank-' + (i + 1)">{{ i + 1 }}</div>
+                <div class="font-bold text-sm text-gray-800">{{ recruiter.name }}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-extrabold text-gray-900 text-sm">{{ recruiter.count }}</div>
+                <div class="text-[10px] font-medium text-gray-400">Hires</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN (Upcoming Drives Card spanning full height) -->
+    <div class="w-72 shrink-0 flex flex-col">
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col" style="box-sizing: border-box;">
+        <div class="mb-3">
+          <h3 class="font-bold text-[16px] text-gray-900 mb-0.5">Upcoming Drives</h3>
+          <p class="text-xs text-gray-400">Scheduled recruitments</p>
+        </div>
+        
+        <!-- Scrollable Cards Container -->
+        <div class="upcoming-drives-container overflow-y-auto space-y-3 pr-1" style="max-height: 340px;">
+          <!-- Dynamic Drive Cards -->
+          <div *ngFor="let drive of recentDrives" class="border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-shadow bg-white flex flex-col justify-between" style="min-height: 180px; gap: 12px;">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-sm text-gray-800">{{ drive.companyName }}</span>
+              <span [class]="drive.statusClass || (drive.status === 'Intake Open' ? 'badge-open' : 'badge-closed')">{{ drive.status }}</span>
+            </div>
+            <div class="text-sm font-semibold text-gray-700">{{ drive.role }}</div>
+            <div class="flex items-center gap-1.5 text-xs text-gray-400">
+              <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+              </svg>
+              {{ drive.location }}
+            </div>
+            <div class="flex gap-1.5 flex-wrap">
+              <span *ngFor="let course of drive.eligibleCourses" class="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ course }}</span>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+              <div class="flex items-center gap-1 text-xs text-gray-400">
+                <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+                {{ drive.openDate }}
+              </div>
+              <div class="text-sm font-extrabold text-gray-800">{{ drive.packageCTC }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL WIDTH: Placement by Department & Courses -->
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 w-full" style="margin-top: 32px; margin-bottom: 32px;">
+    <div class="mb-0.5 font-semibold text-gray-800">Placement by Department &amp; Courses</div>
+    <div class="text-xs text-gray-400 mb-4">Detailed drill-down of placements across all university courses.</div>
+    <div class="space-y-2">
+      <div *ngFor="let school of schools; let sIdx = index" class="school-row border border-gray-100 rounded-xl overflow-hidden">
+        <button (click)="toggleSchool(sIdx)" class="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+          <div class="text-left">
+            <div class="font-semibold text-sm text-gray-800">{{ school.name }}</div>
+            <div class="text-xs text-gray-400 mt-0.5">{{ school.deptsCount }} Courses</div>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="text-right">
+              <div class="text-xs text-gray-400">Placed Students</div>
+              <div class="text-sm font-bold text-gray-800">{{ school.placed }}</div>
+            </div>
+            <div class="text-blue-600 font-bold text-base w-12 text-right">{{ school.rate }}</div>
+            <svg class="chevron w-4 h-4 text-gray-400 transition-transform duration-200" [class.rotate-180]="school.open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+
+        <div *ngIf="school.open" class="dept-panel bg-gray-50 px-5 py-4 border-t border-gray-100">
+          <div class="grid grid-cols-4 gap-3">
+            <div *ngFor="let dept of school.depts" class="bg-white rounded-lg p-3 border border-gray-100">
+              <div class="text-xs text-gray-500 font-medium mb-1">{{ dept.name }}</div>
+              <div class="text-xl font-bold text-gray-900">{{ dept.placed }}</div>
+              <div class="text-[11px] text-gray-400">placed out of {{ dept.total }} opted</div>
+              <div class="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="progress-fill-bar" [style.width]="dept.rate"></div>
+              </div>
+              <div class="text-right text-xs font-semibold text-blue-600 mt-1">{{ dept.rate }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTS PANEL OVERLAY -->
+<div *ngIf="reportsOpen" (click)="toggleReports()" class="fixed inset-0 z-[240] bg-black/20 backdrop-blur-[1px]"></div>
+
+<!-- REPORTS SIDE PANEL -->
+<div class="fixed top-0 right-0 w-[300px] h-screen bg-white border-l border-gray-200 shadow-2xl z-[250] flex flex-col transition-transform duration-300"
+     [style.transform]="reportsOpen ? 'translateX(0)' : 'translateX(100%)'">
+  <div class="p-4 border-b border-gray-100 flex items-start justify-between flex-shrink-0">
+    <div>
+      <div class="font-bold text-xs text-gray-900">Reports</div>
+      <div class="text-[10px] text-gray-400 mt-0.5">Select fields to include in your export.</div>
+    </div>
+    <button (click)="toggleReports()" class="w-6 h-6 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center text-lg">×</button>
+  </div>
+  
+  <div class="flex border-b border-gray-100 px-4 flex-shrink-0">
+    <button (click)="switchReportsTab('std')" class="py-2.5 px-3 text-xs font-semibold"
+            [class.text-blue-600]="reportsTab === 'std'" [class.border-b-2]="reportsTab === 'std'" [class.border-blue-600]="reportsTab === 'std'"
+            [class.text-gray-400]="reportsTab !== 'std'">Standard</button>
+    <button (click)="switchReportsTab('custom')" class="py-2.5 px-3 text-xs font-semibold"
+            [class.text-blue-600]="reportsTab === 'custom'" [class.border-b-2]="reportsTab === 'custom'" [class.border-blue-600]="reportsTab === 'custom'"
+            [class.text-gray-400]="reportsTab !== 'custom'">Custom</button>
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <div *ngIf="reportsTab === 'std'" class="space-y-4">
+      <div>
+        <label class="block text-[10px] font-semibold text-gray-600 mb-1">Export Template</label>
+        <input [(ngModel)]="reportTemplateName" class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500" type="text" placeholder="e.g. Finance Batch Export"/>
+      </div>
+      
+      <!-- Standard report chips categories -->
+      <div class="space-y-3">
+        <div>
+          <div class="text-[9px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1 mb-2">Placement</div>
+          <div class="grid grid-cols-2 gap-2">
+            <ng-container *ngFor="let field of standardReportFields">
+              <label *ngIf="field.category === 'Placement'" class="border border-gray-100 rounded-lg p-2 flex items-center gap-2 text-xs bg-gray-50/50 hover:bg-blue-50/40 cursor-pointer">
+                <input type="checkbox" [(ngModel)]="field.checked" (ngModelChange)="updateFieldsCount()" class="accent-blue-600"/>
+                <span>{{ field.label }}</span>
+              </label>
+            </ng-container>
+          </div>
+        </div>
+        
+        <div>
+          <div class="text-[9px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1 mb-2">Companies</div>
+          <div class="grid grid-cols-2 gap-2">
+            <ng-container *ngFor="let field of standardReportFields">
+              <label *ngIf="field.category === 'Companies'" class="border border-gray-100 rounded-lg p-2 flex items-center gap-2 text-xs bg-gray-50/50 hover:bg-blue-50/40 cursor-pointer">
+                <input type="checkbox" [(ngModel)]="field.checked" (ngModelChange)="updateFieldsCount()" class="accent-blue-600"/>
+                <span>{{ field.label }}</span>
+              </label>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom report tab fields -->
+    <div *ngIf="reportsTab === 'custom'" class="space-y-4">
+      <div>
+        <div class="text-[9px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1 mb-2">Student Profile Fields</div>
+        <div class="grid grid-cols-2 gap-2">
+          <label *ngFor="let field of customReportFields" class="border border-gray-100 rounded-lg p-2 flex items-center gap-2 text-xs bg-gray-50/50 hover:bg-blue-50/40 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="field.checked" (ngModelChange)="updateFieldsCount()" class="accent-blue-600"/>
+            <span>{{ field.label }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-4 border-t border-gray-100 bg-gray-50 flex flex-col gap-2 flex-shrink-0">
+    <button (click)="generateReport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-xs font-semibold flex items-center justify-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 17v-2m3 2v-4m3 4v-6M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"/></svg>
+      Generate Report
+    </button>
+  </div>
+</div>
+
+<!-- RECRUITMENT WIZARD OVERLAY -->
+<div *ngIf="wizardOpen" class="jd-overlay">
+  <div class="jd-modal">
+    <!-- Modal Header -->
+    <div class="jd-head">
+      <span class="jd-title">Create Placement Drive</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="jd-step-badge">
+          {{ step <= getDynamicTotalSteps() ? 'Step ' + step + ' of ' + getDynamicTotalSteps() : '✓ Done' }}
+        </span>
+        <button (click)="closeWizard()" class="jd-close">×</button>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="jd-prog">
+      <div class="jd-prog-fill" [style.width]="(step > getDynamicTotalSteps() ? 100 : (step/getDynamicTotalSteps() * 100)) + '%'"></div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="jd-body">
+      <!-- STEP 1: Company List -->
+      <div *ngIf="step === 1" class="space-y-4">
+        <div class="text-[10px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1">Companies</div>
+        <div class="space-y-3">
+          <div *ngFor="let c of companies; let ci = index" class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                {{ c.name ? c.name.slice(0,2).toUpperCase() : '?' }}
+              </div>
+              <div class="flex-1">
+                <label class="block text-[11px] font-semibold text-gray-600 mb-1">Company</label>
+                <select [ngModel]="c.masterId" (ngModelChange)="selectCompany(ci, $event)" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500">
+                  <option value="">Select a Company</option>
+                  <option *ngFor="let cm of COMPANY_MASTER" [value]="cm.id">{{ cm.name }}</option>
+                </select>
+              </div>
+              <button *ngIf="companies.length > 1" (click)="removeCompany(ci)" class="border border-red-200 text-red-600 rounded-lg p-1.5 hover:bg-red-50 flex items-center justify-center mt-4">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+            
+            <div>
+              <label class="block text-[11px] font-semibold text-gray-600 mb-1">Industry</label>
+              <select [(ngModel)]="c.industry" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500">
+                <option value="">Select Industry</option>
+                <option *ngFor="let ind of INDUSTRIES" [value]="ind">{{ ind }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button (click)="addCompany()" class="w-full py-2.5 border border-dashed border-gray-300 hover:border-blue-500 rounded-xl flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-blue-600 transition-colors bg-transparent">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Add Company
+        </button>
+      </div>
+
+      <!-- STEP 2: Job Openings per Company -->
+      <div *ngIf="step === 2" class="space-y-4">
+        <div class="text-[10px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1">Job Openings per Company</div>
+        <div *ngFor="let c of companies" class="space-y-3 mb-5">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                {{ c.name ? c.name.slice(0,2).toUpperCase() : '?' }}
+              </div>
+              <span class="font-bold text-sm text-gray-800">{{ c.name || 'Unnamed Company' }}</span>
+              <span class="text-xs text-gray-400">({{ (jobs[c.id] || []).length }} openings)</span>
+            </div>
+            <button (click)="addJob(c.id)" class="border border-gray-200 hover:border-blue-400 rounded-lg py-1 px-3 text-xs flex items-center gap-1 hover:text-blue-600 transition-colors">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add Job
+            </button>
+          </div>
+
+          <div *ngIf="!(jobs[c.id] || []).length" class="text-center py-6 border border-dashed border-gray-200 rounded-xl text-xs text-gray-400">
+            No jobs yet — click "+ Add Job" above
+          </div>
+
+          <div *ngFor="let j of jobs[c.id] || []; let ji = index" class="border border-gray-100 rounded-xl p-3 bg-gray-50/50 space-y-3">
+            <div (click)="toggleJob(c.id, ji)" class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-bold">{{ ji + 1 }}</span>
+                <span class="text-xs font-semibold text-gray-800">{{ j.role || 'Untitled Role' }}</span>
+                <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">{{ j.type }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button (click)="$event.stopPropagation(); removeJob(c.id, ji)" class="w-6 h-6 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded flex items-center justify-center">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+                <span class="text-xs text-gray-400 transform transition-transform" [class.rotate-180]="j._open">▼</span>
+              </div>
+            </div>
+
+            <!-- Job fields expansion -->
+            <div *ngIf="j._open" class="pt-3 border-t border-gray-100 space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-600 mb-1">Role / Job Title</label>
+                  <input [(ngModel)]="j.role" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" type="text" placeholder="e.g. Software Engineer"/>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-600 mb-1">Employment Type</label>
+                  <select [(ngModel)]="j.type" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500">
+                    <option *ngFor="let jt of JOB_TYPES" [value]="jt">{{ jt }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-gray-600 mb-1">Job Description</label>
+                <textarea [(ngModel)]="j.desc" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500 min-h-[60px] overflow-hidden" placeholder="Describe responsibilities and expectations…"></textarea>
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-600 mb-1">Compensation (LPA)</label>
+                  <input [(ngModel)]="j.ctc" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" type="text" placeholder="e.g. 18 LPA"/>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-600 mb-1">Min. Aggregate %</label>
+                  <input [(ngModel)]="j.minAgg" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" type="number" min="0" max="100" placeholder="e.g. 60"/>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-gray-600 mb-1">Active Backlogs</label>
+                  <select [(ngModel)]="j.backlogAllowed" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500">
+                    <option [ngValue]="false">Not Allowed</option>
+                    <option [ngValue]="true">Allowed</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Batch Eligibility & Dates -->
+      <div *ngIf="step === 3" class="space-y-4">
+        <div class="text-[10px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1">Batch Eligibility &amp; Application Dates</div>
+        
+        <div *ngFor="let c of companies" class="space-y-3 mb-5">
+          <div class="flex items-center gap-2 border-b border-gray-100 pb-2">
+            <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+              {{ c.name ? c.name.slice(0,2).toUpperCase() : '?' }}
+            </div>
+            <span class="font-bold text-sm text-gray-800">{{ c.name || 'Unnamed Company' }}</span>
+          </div>
+
+          <div *ngFor="let j of jobs[c.id] || []; let ji = index" class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm space-y-3">
+            <div class="font-bold text-sm text-gray-800">{{ j.role || 'Untitled Role' }}</div>
+            <div class="text-xs text-gray-400 mt-0.5">{{ j.type }} · {{ j.ctc || 'TBD' }}</div>
+
+            <!-- Batch selector -->
+            <div>
+              <label class="block text-[11px] font-semibold text-gray-600 mb-1">Eligible Batch (start year)</label>
+              <span class="block text-[10px] text-gray-400 mb-2">Select start year — chosen batches appear as tags below.</span>
+              
+              <select (change)="addBatch(c.id + '_' + ji, $event)" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500">
+                <option value="">— Add a batch start year —</option>
+                <option *ngFor="let bm of BATCH_MASTER" [value]="bm.id">{{ bm.label }}</option>
+              </select>
+
+              <div class="flex flex-wrap gap-2 mt-3">
+                <div *ngFor="let bid of batchDates[c.id + '_' + ji]?.batches" class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-600 text-xs font-semibold px-3 py-1 rounded-full">
+                  {{ bid.replace('b', '') }}
+                  <span (click)="removeBatch(c.id + '_' + ji, bid)" class="cursor-pointer font-bold opacity-60 hover:opacity-100">✕</span>
+                </div>
+                <div *ngIf="!batchDates[c.id + '_' + ji]?.batches?.length" class="text-xs text-gray-400">
+                  No batches selected yet
+                </div>
+              </div>
+            </div>
+
+            <!-- Dates -->
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-gray-600 mb-1">Open Date</label>
+                <input [(ngModel)]="batchDates[c.id + '_' + ji].openDate" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" type="date"/>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-gray-600 mb-1">Close Date</label>
+                <input [(ngModel)]="batchDates[c.id + '_' + ji].closeDate" class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" type="date"/>
+              </div>
+            </div>
+
+            <!-- Data Collection Switch Option -->
+            <div style="margin-top: 14px; padding: 12px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; display: flex; align-items: flex-start; gap: 10px; text-align: left;">
+              <input type="checkbox" [id]="'jdDataColl_' + c.id + '_' + ji" class="row-cb" style="margin-top: 3px; width: 15px; height: 15px; accent-color: #2563eb; cursor: pointer;"
+                     [checked]="batchDates[c.id + '_' + ji]?.requiresDataCollection"
+                     (change)="toggleDataCollection(c.id + '_' + ji, $any($event.target).checked)">
+              <div>
+                <label [for]="'jdDataColl_' + c.id + '_' + ji" style="font-size: 13px; font-weight: 600; color: #1d4ed8; cursor: pointer; display: block; margin-bottom: 2px;">Requires additional data collection</label>
+                <div style="font-size: 11px; color: #6b7280; line-height: 1.4;">Enable this if you need students to fill out specific fields (like portfolio link, PAN number) while applying. Unlocks Step 4 — Form Builder.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Form Builder (shown if checked) -->
+      <div *ngIf="step === 4 && getDynamicTotalSteps() === 4" class="space-y-4">
+        <div class="text-[10px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1">Form Builder</div>
+        <p class="text-xs text-gray-400 mb-3">Build the form students will fill out when applying.</p>
+        
+        <ng-container *ngFor="let c of companies">
+          <div *ngFor="let j of jobs[c.id] || []; let ji = index" class="space-y-3 mb-5">
+            <ng-container *ngIf="batchDates[c.id + '_' + ji]?.requiresDataCollection">
+              <div class="border border-gray-100 rounded-xl p-4 bg-gray-50/50 space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-gray-100">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">
+                      {{ c.name ? c.name.slice(0,2).toUpperCase() : '?' }}
+                    </div>
+                    <span class="font-bold text-xs text-gray-800">{{ j.role || 'Untitled Role' }}</span>
+                    <span class="text-[11px] text-gray-400">({{ c.name || 'Unnamed' }})</span>
+                  </div>
+                  <span class="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-semibold">
+                    {{ (batchDates[c.id + '_' + ji].questions || []).length === 1 ? '1 question' : ((batchDates[c.id + '_' + ji].questions || []).length + ' questions') }}
+                  </span>
+                </div>
+
+                <!-- Questions list -->
+                <div class="space-y-3">
+                  <div *ngFor="let q of batchDates[c.id + '_' + ji].questions || []; let qi = index" class="question-card bg-white p-4 border border-gray-200 rounded-xl space-y-3 shadow-sm">
+                    <div class="flex items-center gap-2.5">
+                      <span class="q-num">{{ qi + 1 }}</span>
+                      <input class="w-full border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" style="flex:1;" type="text" placeholder="Question label..." [(ngModel)]="q.label"/>
+                      
+                      <select class="border border-gray-200 rounded-lg p-2 text-xs focus:border-blue-500" style="width:130px;" [(ngModel)]="q.type">
+                        <option value="Short Text">Short Text</option>
+                        <option value="Paragraph">Paragraph</option>
+                        <option value="File Upload">File Upload</option>
+                      </select>
+
+                      <button (click)="removeQuestion(c.id + '_' + ji, qi)" class="delete-q-btn">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
+
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                      <span class="bg-purple-50 text-purple-700 text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono">T {{ q.type }}</span>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500 font-medium">Required</span>
+                        <div class="toggle-track" [class.on]="q.required" (click)="toggleRequired(c.id + '_' + ji, qi)">
+                          <div class="toggle-knob"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="!(batchDates[c.id + '_' + ji].questions || []).length" class="text-center py-6 border border-dashed border-gray-200 rounded-xl text-xs text-gray-400 bg-white">
+                    No questions yet — click "+ Add Question" below
+                  </div>
+                </div>
+
+                <button (click)="addQuestion(c.id + '_' + ji)" class="w-full py-2 border border-dashed border-gray-300 hover:border-blue-500 rounded-xl flex items-center justify-center gap-2 text-xs text-gray-500 hover:text-blue-600 transition-colors bg-white">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add Question
+                </button>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- SUCCESS SCREEN -->
+      <div *ngIf="step > getDynamicTotalSteps()" class="text-center py-6 space-y-4">
+        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto text-3xl font-semibold shadow-inner">
+          ✓
+        </div>
+        <h2 class="font-bold text-lg text-gray-800">Drives Created Successfully</h2>
+        <p class="text-xs text-gray-400">
+          Placement drives have been created and published successfully to the system.
+        </p>
+
+        <div class="space-y-3 mt-5 text-left max-w-md mx-auto">
+          <div *ngFor="let c of companies" class="border border-gray-100 bg-gray-50 rounded-xl p-4 space-y-3">
+            <div class="font-bold text-xs text-gray-800 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+              {{ c.name || 'Unnamed Company' }}
+            </div>
+            
+            <div class="space-y-2">
+              <div *ngFor="let j of jobs[c.id] || []; let ji = index" class="border-t border-gray-200 pt-2 flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold text-xs text-gray-700">{{ j.role || 'Untitled Role' }}</div>
+                  <div class="text-[10px] text-gray-400 mt-0.5">
+                    {{ j.type }} · {{ j.ctc || 'TBD' }} · Batches: {{ batchDates[c.id + '_' + ji]?.batches?.join(', ')?.replace('b', '') || 'All' }}{{ batchDates[c.id + '_' + ji]?.requiresDataCollection ? ' · Additional Fields: ' + (batchDates[c.id + '_' + ji]?.questions || []).length : '' }}
+                  </div>
+                  <div class="text-[10px] text-gray-400">
+                    Open: {{ formatDate(batchDates[c.id + '_' + ji]?.openDate) }} → Close: {{ formatDate(batchDates[c.id + '_' + ji]?.closeDate) }}
+                  </div>
+                </div>
+                <span class="bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Published</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="jd-foot">
+      <button *ngIf="step <= getDynamicTotalSteps()" (click)="closeWizard()" class="jd-btn">Cancel</button>
+      <div style="display:flex;gap:8px" *ngIf="step <= getDynamicTotalSteps()" class="ml-auto">
+        <button *ngIf="step > 1" (click)="prevStep()" class="jd-btn">← Back</button>
+        <button (click)="nextStep()" class="jd-btn jd-btn-primary">
+          {{ step === getDynamicTotalSteps() ? 'Create Drives' : 'Next Step' }}
+        </button>
+      </div>
+      <button *ngIf="step > getDynamicTotalSteps()" (click)="closeWizard()" class="jd-btn jd-btn-primary ml-auto" style="padding:9px 28px">Done</button>
+    </div>
+  </div>
+</div>
