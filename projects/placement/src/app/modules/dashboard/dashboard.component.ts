@@ -3,6 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { SharedToastService } from '@libs/shared-toast';
+import { environment } from '../../../environments/environment';
+
+const extractDataArray = (obj: any): any[] => {
+  if (Array.isArray(obj)) return obj;
+  if (obj && Array.isArray(obj.responseData?.data?.data)) return obj.responseData.data.data;
+  if (obj && Array.isArray(obj.responseData?.data)) return obj.responseData.data;
+  if (obj && Array.isArray(obj.responseData)) return obj.responseData;
+  if (obj && Array.isArray(obj.data)) return obj.data;
+  if (obj && Array.isArray(obj.value)) return obj.value;
+  return [];
+};
 
 // ── BATCH MODEL & DASHBOARD STATS ──
 export interface DashboardStats {
@@ -17,31 +28,31 @@ export interface DashboardStats {
 class StudentApiService {
   constructor(private http: HttpClient) {}
   list(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/api/students');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/list-students');
   }
 }
 
 class CompanyApiService {
   constructor(private http: HttpClient) {}
   list(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/api/companies');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/list-comnpanies');
   }
 }
 
 class PlacementApiService {
   constructor(private http: HttpClient) {}
   listDrives(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/placements');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/placements');
   }
   createDrive(drive: any): Observable<any> {
-    return this.http.post<any>('http://localhost:8080/placements', drive);
+    return this.http.post<any>(environment.baseUrl + '/placements-app/create-placements', drive);
   }
 }
 
 class BatchApiService {
   constructor(private http: HttpClient) {}
   getSummary(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/api/batches');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/list-batches');
   }
 }
 
@@ -241,7 +252,7 @@ export class DashboardComponent implements OnInit {
   loadRecentDrives(): void {
     this.placementApi.listDrives().subscribe({
       next: (res: any) => {
-        const drives = res && res.data ? res.data : (Array.isArray(res) ? res : []);
+        const drives = extractDataArray(res);
         if (drives && drives.length > 0) {
           const flatDrives: any[] = [];
           drives.forEach((p: any) => {
@@ -297,11 +308,12 @@ export class DashboardComponent implements OnInit {
 
   loadBatches(): void {
     this.batchApi.getSummary().subscribe({
-      next: (res: any[]) => {
+      next: (rawRes: any) => {
+        const res = extractDataArray(rawRes);
         if (res && res.length) {
-          this.BATCH_MASTER = res.map(b => ({
-            id: b.batchCode || b.batchId || b._id,
-            label: b.batchCode || b.batchName
+          this.BATCH_MASTER = res.map((b: any) => ({
+            id: b.batchCode_PlacementBatches_Text || b.batchCode || b.batchId || b._id,
+            label: b.batchCode_PlacementBatches_Text || b.batchCode || b.batchName_PlacementBatches_Text || b.batchName
           }));
         } else {
           this.BATCH_MASTER = [];
@@ -320,16 +332,16 @@ export class DashboardComponent implements OnInit {
       students: this.studentApi.list(),
       companies: this.companyApi.list(),
       drives: this.placementApi.listDrives(),
-      applications: this.http.get<any[]>('http://localhost:8080/applications')
+      applications: this.http.get<any[]>(environment.baseUrl + '/placements-app/list-applications')
     }).subscribe({
       next: ({ students, companies, drives, applications }) => {
-        this.allStudents = students && (students as any).data ? (students as any).data : (Array.isArray(students) ? students : []);
-        this.allCompanies = companies && (companies as any).value ? (companies as any).value : (Array.isArray(companies) ? companies : []);
-        this.allDrives = drives && (drives as any).data ? (drives as any).data : (Array.isArray(drives) ? drives : []);
-        this.allApplications = applications && (applications as any).data ? (applications as any).data : (Array.isArray(applications) ? applications : []);
+        this.allStudents = extractDataArray(students);
+        this.allCompanies = extractDataArray(companies);
+        this.allDrives = extractDataArray(drives);
+        this.allApplications = extractDataArray(applications);
         
         if (this.allCompanies && this.allCompanies.length > 0) {
-          this.COMPANY_MASTER = this.allCompanies.map(c => ({ id: c._id || c.id, name: c.companyName || c.name || '', industry: c.industry || '' }));
+          this.COMPANY_MASTER = this.allCompanies.map(c => ({ id: c.companyCode_PlacementCompany_Text || c._id || c.id || c.COMPANY_CODE || c.name, name: c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name || '', industry: c.INDUSTRY || c.industry_PlacementCompany_Text || c.industry || '' }));
         }
         this.calculateStats();
         this.cdr.detectChanges();
@@ -979,35 +991,35 @@ export class DashboardComponent implements OnInit {
         const endVal = bd.closeDate || new Date().toISOString().substring(0, 10);
 
         const jobsPayload = [{
-          jobId: 'J' + Math.floor(100 + Math.random() * 900),
-          companyId: companyIdVal,
-          role: j.role || 'Software Engineer',
-          Description: j.desc || '',
-          eligibleBatches: bd.batches.map((b: string) => {
+          jobId_PlacementDrive_Text: 'J' + Math.floor(100 + Math.random() * 900),
+          companyId_PlacementDrive_Text: companyIdVal,
+          role_PlacementDrive_Text: j.role || 'Software Engineer',
+          description_PlacementDrive_Text: j.desc || '',
+          eligibleBatches_PlacementDrive_TextArray: bd.batches.map((b: string) => {
             const master = this.BATCH_MASTER.find((bm: any) => bm.id === b);
             return master ? master.label : b;
-          }).join(','),
-          employmentType: j.type || 'Full-Time',
-          packageLPA: j.ctc ? parseFloat(j.ctc.replace(/[^\d.]/g, '')) || 6.0 : 6.0,
-          minCGPA: j.minAgg ? Number(j.minAgg) / 10 : 6.0,
-          active: true,
-          allowBacklog: j.backlogAllowed || false,
-          fields: bd.requiresDataCollection && bd.questions ? bd.questions.map((q: any) => ({
-            fieldId: 'F' + Math.floor(100 + Math.random() * 900),
-            label: q.label || 'Field',
-            fieldType: q.type || 'Short Text',
-            required: q.required || false
+          }),
+          employmentType_PlacementDrive_Text: j.type || 'Full-Time',
+          packageLpa_PlacementDrive_Text: j.ctc ? String(j.ctc) : '6.0',
+          minCgpa_PlacementDrive_Double: j.minAgg ? Number(j.minAgg) / 10 : 6.0,
+          active_PlacementDrive_Bool: true,
+          allowBacklog_PlacementDrive_Bool: j.backlogAllowed || false,
+          fields_PlacementDrive_DocumentArray: bd.requiresDataCollection && bd.questions ? bd.questions.map((q: any) => ({
+            fieldId_PlacementDrive_Text: 'F' + Math.floor(100 + Math.random() * 900),
+            label_PlacementDrive_Text: q.label || 'Field',
+            fieldType_PlacementDrive_Text: q.type || 'Short Text',
+            required_PlacementDrive_Bool: q.required || false
           })) : []
         }];
 
         const payload = {
-          placementCode: codeVal,
-          companyId: companyIdVal,
-          companyName: c.name,
-          batchCode: batchCodeVal,
-          driveStart: startVal,
-          driveEnd: endVal,
-          jobs: jobsPayload
+          companyCode_PlacementDrive_Text: codeVal,
+          companyId_PlacementDrive_Text: companyIdVal,
+          companyName_PlacementDrive_Text: c.name,
+          batchCode_PlacementDrive_Text: batchCodeVal,
+          driveStart_PlacementDrive_Date: startVal,
+          driveEnd_PlacementDrive_Date: endVal,
+          jobs_PlacementDrive_DocumentArray: jobsPayload
         };
 
         this.placementApi.createDrive(payload).subscribe({

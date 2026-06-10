@@ -87,7 +87,7 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
     @Optional() @Inject(VERSION_CHECK_SERVICE) private versionCheckService?: any
 
   ) {
-   this.loginForm = this.fb.group({
+    this.loginForm = this.fb.group({
       login_Email: [
         '',
         [
@@ -98,7 +98,7 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
       ],
       login_Password: ['', [Validators.required]]
     });
-  
+
     this.subscriptions.add(
       this.router.events
         .pipe(filter((event) => event instanceof NavigationEnd))
@@ -107,20 +107,20 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
     );
   }
 
-    @ViewChild('navLottieContainer') navLottieContainer!: ElementRef;
-    private animationInstance: any; 
-  
-    ngAfterViewInit(): void {
-      if (this.navLottieContainer && typeof lottie !== 'undefined') {
-        this.animationInstance = lottie.loadAnimation({
-          container: this.navLottieContainer.nativeElement,
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'assets/Loading.json'
-        });
-      }
+  @ViewChild('navLottieContainer') navLottieContainer!: ElementRef;
+  private animationInstance: any;
+
+  ngAfterViewInit(): void {
+    if (this.navLottieContainer && typeof lottie !== 'undefined') {
+      this.animationInstance = lottie.loadAnimation({
+        container: this.navLottieContainer.nativeElement,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: 'assets/Loading.json'
+      });
     }
+  }
 
 
   ngOnInit() {
@@ -153,7 +153,7 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
               this.fetchMenuDetails();
 
             } else {
-               this.spinner.hide();
+              this.spinner.hide();
               this.toastService.showToast(result.responseData.message, 'error');
             }
           },
@@ -188,7 +188,7 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
           this.spinner.hide(); // Hide spinner before navigation
 
           // Check for new version before navigation (handles stale bundles after deployment)
-          this.checkVersionAndNavigate();
+          // this.checkVersionAndNavigate();
 
         } else {
           this.spinner.hide();
@@ -202,7 +202,7 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
 
-     isMobileScreen(): boolean {
+  isMobileScreen(): boolean {
     return window.innerWidth < 840;
   }
 
@@ -211,37 +211,37 @@ export class SharedAuthComponent implements OnInit, OnDestroy, AfterViewInit {
    * If new version detected, reload to get fresh bundles.
    * Otherwise, navigate normally.
    */
-  private async checkVersionAndNavigate(): Promise<void> {
-    try {
-      // Check if version check service is available and if new version is deployed
-      if (this.versionCheckService?.hasNewVersionDeployed) {
-        const hasNewVersion = await this.versionCheckService.hasNewVersionDeployed();
-        
-        if (hasNewVersion) {
-          console.log('🔄 New version detected after login, reloading...');
-          // Clear cached state
-          sessionStorage.clear();
-          // Navigate using location to ensure fresh bundles are loaded
-          window.location.href = '/#/kjusys';
-          window.location.reload();
-          return;
-        }
-      }
-    } catch (error) {
-      console.warn('Version check failed, proceeding with normal navigation:', error);
-    }
+  // private async checkVersionAndNavigate(): Promise<void> {
+  //   try {
+  //     // Check if version check service is available and if new version is deployed
+  //     if (this.versionCheckService?.hasNewVersionDeployed) {
+  //       const hasNewVersion = await this.versionCheckService.hasNewVersionDeployed();
 
-    // No new version or check not available - proceed with normal navigation
-    // Preload MFE modules in the background
-    setTimeout(() => this.mfeCommonService?.preloadNonCriticalModules(), 1000);
+  //       if (hasNewVersion) {
+  //         console.log('🔄 New version detected after login, reloading...');
+  //         // Clear cached state
+  //         sessionStorage.clear();
+  //         // Navigate using location to ensure fresh bundles are loaded
+  //         window.location.href = '/#/kjusys';
+  //         window.location.reload();
+  //         return;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.warn('Version check failed, proceeding with normal navigation:', error);
+  //   }
 
-    this.router.navigateByUrl('/kjusys').then(() => {
-      window.history.replaceState({}, '', '/#/kjusys');
-    }).catch(err => {
-      console.error("Navigation error:", err);
-      window.location.reload();
-    });
-  }
+  //   // No new version or check not available - proceed with normal navigation
+  //   // Preload MFE modules in the background
+  //   setTimeout(() => this.mfeCommonService?.preloadNonCriticalModules(), 1000);
+
+  //   this.router.navigateByUrl('/kjusys').then(() => {
+  //     window.history.replaceState({}, '', '/#/kjusys');
+  //   }).catch(err => {
+  //     console.error("Navigation error:", err);
+  //     window.location.reload();
+  //   });
+  // }
 
 
 }

@@ -24,13 +24,13 @@ import { environment } from '../environments/environment';
       provide: LocationStrategy,
       useClass: HashLocationStrategy
     },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: CommonHttpInterceptor,
-      multi: true,
-    },
-    AuthService,
-    AuthGuard,
+    // {
+    //   provide: HTTP_INTERCEPTORS,
+    //   useClass: CommonHttpInterceptor,
+    //   multi: true,
+    // },
+    // AuthService,
+    // AuthGuard,
     CookieService,
     SharedToastService
   ],
@@ -39,20 +39,20 @@ import { environment } from '../environments/environment';
     AppRoutingModule,
     ReactiveFormsModule,
     StoreModule.forRoot({}, {
-          //  metaReducers,
-          runtimeChecks: {
-              strictStateImmutability: false,
-              strictActionImmutability: false,
-          },
-      }),
+      //  metaReducers,
+      runtimeChecks: {
+        strictStateImmutability: false,
+        strictActionImmutability: false,
+      },
+    }),
     StoreDevtoolsModule.instrument({
-          maxAge: 25, // Retains last 25 states
-          logOnly: !isDevMode(), // Restrict extension to log-only mode
-          autoPause: true, // Pauses recording actions and state changes when the extension window is not open
-      }),
-      EffectsModule.forRoot([]),
-      HttpCommonModule.forRoot(environment),
-      SharedAuthModule,
+      maxAge: 25, // Retains last 25 states
+      logOnly: !isDevMode(), // Restrict extension to log-only mode
+      autoPause: true, // Pauses recording actions and state changes when the extension window is not open
+    }),
+    EffectsModule.forRoot([]),
+    HttpCommonModule.forRoot(environment),
+    SharedAuthModule,
   ],
   bootstrap: [AppComponent]
 })

@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  manifestPath: '/assets/mf.manifest.prod.json?v=1780643029695',
+  manifestPath: '/assets/mf.manifest.prod.json?v=1781087867428',
   mfe: {
     admissions: 'https://kjusys-admissions.kristujayanti.edu.in/',
     core: 'https://kjusys-core.kristujayanti.edu.in/',

@@ -5,6 +5,7 @@ import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
+import { environment } from '../../../environments/environment';
 
 // ── CUSTOM STUDENT MODEL ──
 export interface Student {
@@ -33,8 +34,10 @@ export interface Student {
 
 // ── STUDENT API SERVICE ──
 class StudentApiService {
-  private base = 'http://localhost:8080/api/students';
-  private bulkUrl = 'http://localhost:8080/api/students/bulk';
+  private base = environment.baseUrl + '/placements-app/list-students';
+  private getUrl = environment.baseUrl + '/placements-app/get-student';
+  private updateUrl = environment.baseUrl + '/placements-app/update-student';
+  private bulkUrl = environment.baseUrl + '/placements-app/update-student-bulk';
 
   constructor(private http: HttpClient) { }
 
@@ -84,15 +87,15 @@ class StudentApiService {
   list(): Observable<Student[]> {
     return this.http.get<any>(this.base).pipe(
       map(res => {
-        const list = res && res.data ? res.data : (Array.isArray(res) ? res : []);
+        const list = res && res.responseData.data ? res.responseData.data : (Array.isArray(res) ? res : []);
         return list.map((s: any) => this.mapToStudent(s));
       })
     );
   }
 
   getOne(id: string): Observable<Student> {
-    return this.http.get<any>(`${this.base}/${id}`).pipe(
-      map(res => this.mapToStudent(res && res.data ? res.data : res))
+    return this.http.get<any>(`${this.getUrl}/${id}`).pipe(
+      map(res => this.mapToStudent(res && (res.responseData?.data || res.responseData || res.data) ? (res.responseData?.data || res.responseData || res.data) : res))
     );
   }
 
@@ -100,7 +103,7 @@ class StudentApiService {
     const payload: any = {};
     if (optIn !== undefined) payload.optedIn = optIn === 'opted_in';
     if (freeze !== undefined) payload.freeze = freeze === 'frozen';
-    return this.http.put<any>(`${this.base}/${id}`, payload).pipe(
+    return this.http.put<any>(`${this.updateUrl}/${id}`, payload).pipe(
       map(s => this.mapToStudent(s))
     );
   }

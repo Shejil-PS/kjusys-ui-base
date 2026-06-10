@@ -3,6 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
+import { environment } from '../../../environments/environment';
+
+const extractDataArray = (obj: any): any[] => {
+  if (Array.isArray(obj)) return obj;
+  if (obj && Array.isArray(obj.responseData?.data?.data)) return obj.responseData.data.data;
+  if (obj && Array.isArray(obj.responseData?.data)) return obj.responseData.data;
+  if (obj && Array.isArray(obj.responseData)) return obj.responseData;
+  if (obj && Array.isArray(obj.data)) return obj.data;
+  if (obj && Array.isArray(obj.value)) return obj.value;
+  return [];
+};
 
 // ── CUSTOM MODELS ──
 export interface PlacementDrive {
@@ -64,27 +75,27 @@ export interface CandidateView {
 class StudentApiService {
   constructor(private http: HttpClient) { }
   list(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/api/students');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/list-students');
   }
 }
 
 class PlacementApiService {
   constructor(private http: HttpClient) { }
   listDrives(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/placements');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/placements');
   }
   createDrive(drive: any): Observable<any> {
-    return this.http.post<any>('http://localhost:8080/placements', drive);
+    return this.http.post<any>(environment.baseUrl + '/placements-app/create-placements', drive);
   }
   updateDrive(id: string, drive: any): Observable<any> {
-    return this.http.put<any>(`http://localhost:8080/placements/${id}`, drive);
+    return this.http.put<any>(`${environment.baseUrl}/placements-app/update-placements/${id}`, drive);
   }
   listCandidates(id: string): Observable<any[]> {
     const param = id.startsWith('J') ? 'jobId' : 'placementId';
-    return this.http.get<any[]>(`http://localhost:8080/applications?${param}=${id}`);
+    return this.http.get<any[]>(`${environment.baseUrl}/placements-app/list-applications?${param}=${id}`);
   }
   updateCandidateStatus(driveId: string, appId: string, status: string): Observable<any> {
-    return this.http.patch<any>(`http://localhost:8080/applications/${appId}/status`, { status });
+    return this.http.patch<any>(`${environment.baseUrl}/placements-app/applications/${appId}/status`, { status });
   }
 }
 
@@ -242,30 +253,32 @@ export class DrivesComponent implements OnInit {
   loadDrives(): void {
     forkJoin({
       drives: this.placementApi.listDrives(),
-      apps: this.http.get<any[]>('http://localhost:8080/applications')
+      apps: this.http.get<any[]>(environment.baseUrl + '/placements-app/list-applications')
     }).subscribe({
       next: ({ drives, apps }) => {
-        const drivesList = drives && (drives as any).data ? (drives as any).data : (Array.isArray(drives) ? drives : []);
-        const appsList = apps && (apps as any).data ? (apps as any).data : (Array.isArray(apps) ? apps : []);
+        const drivesList = extractDataArray(drives);
+        const appsList = extractDataArray(apps);
 
         if (drivesList && drivesList.length > 0) {
           const flatDrives: PlacementDrive[] = [];
           drivesList.forEach((p: any) => {
-            if (p.jobs && Array.isArray(p.jobs)) {
-              p.jobs.forEach((j: any) => {
-                const count = appsList.filter((a: any) => a.jobId === j.jobId).length;
+            const jobsArray = p.jobs_PlacementDrive_DocumentArray || p.jobs;
+            if (jobsArray && Array.isArray(jobsArray)) {
+              jobsArray.forEach((j: any) => {
+                const actualJobId = j.jobId_PlacementDrive_Text || j.jobId;
+                const count = appsList.filter((a: any) => a.jobId === actualJobId).length;
                 flatDrives.push({
-                  id: j.jobId || p._id || p.id,
+                  id: actualJobId || p._id || p.id,
                   placementId: p._id || p.id,
-                  companyName: p.companyName || '',
-                  role: j.role || '',
-                  type: j.employmentType || j.type || 'Full-Time',
-                  packageCTC: j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || ''),
+                  companyName: p.companyName_PlacementDrive_Text || p.companyName || '',
+                  role: j.role_PlacementDrive_Text || j.role || '',
+                  type: j.employmentType_PlacementDrive_Text || j.employmentType || j.type || 'Full-Time',
+                  packageCTC: j.packageLpa_PlacementDrive_Text ? `${j.packageLpa_PlacementDrive_Text} LPA` : (j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || '')),
                   location: p.address || j.location || 'Bengaluru, India',
-                  status: j.active === false ? 'closed' : 'open',
-                  openDate: this.formatDate(p.driveStart || p.openDate),
-                  closeDate: this.formatDate(p.driveEnd || p.closeDate),
-                  minimumCgpa: j.minCGPA || j.minimumCgpa || 6.0,
+                  status: (j.active_PlacementDrive_Bool === false || j.active === false) ? 'closed' : 'open',
+                  openDate: this.formatDate(p.driveStart_PlacementDrive_Date || p.driveStart || p.openDate),
+                  closeDate: this.formatDate(p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate),
+                  minimumCgpa: j.minCgpa_PlacementDrive_Double || j.minCGPA || j.minimumCgpa || 6.0,
                   applicationsCount: count
                 });
               });
@@ -274,14 +287,14 @@ export class DrivesComponent implements OnInit {
               flatDrives.push({
                 id: p._id || p.id,
                 placementId: p._id || p.id,
-                companyName: p.companyName || '',
+                companyName: p.companyName_PlacementDrive_Text || p.companyName || '',
                 role: p.role || '',
                 type: p.type || 'Full-Time',
                 packageCTC: p.packageCTC || '',
                 location: p.location || 'Bengaluru, India',
                 status: p.status || 'open',
-                openDate: this.formatDate(p.openDate),
-                closeDate: this.formatDate(p.closeDate),
+                openDate: this.formatDate(p.driveStart_PlacementDrive_Date || p.driveStart || p.openDate),
+                closeDate: this.formatDate(p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate),
                 minimumCgpa: p.minimumCgpa || 6.0,
                 applicationsCount: count
               });
@@ -329,8 +342,8 @@ export class DrivesComponent implements OnInit {
       students: this.studentApi.list()
     }).subscribe({
       next: ({ candidates, students }) => {
-        const candidatesList = candidates && (candidates as any).data ? (candidates as any).data : (Array.isArray(candidates) ? candidates : []);
-        const studentsList = students && (students as any).data ? (students as any).data : (Array.isArray(students) ? students : []);
+        const candidatesList = extractDataArray(candidates);
+        const studentsList = extractDataArray(students);
 
         if (candidatesList && candidatesList.length > 0) {
           this.candidates = candidatesList.map((c: any, i: number) => {
@@ -415,7 +428,7 @@ export class DrivesComponent implements OnInit {
     if (!studentRegisterNo) return;
     this.studentApi.list().subscribe({
       next: (students) => {
-        const studentsList = students && (students as any).data ? (students as any).data : (Array.isArray(students) ? students : []);
+        const studentsList = extractDataArray(students);
         const student = studentsList.find((s: any) =>
           (s.registerNumber || s.rollNo || s.id || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim()
         );
@@ -423,7 +436,7 @@ export class DrivesComponent implements OnInit {
           const studentId = student.id || student._id;
 
           // 1. Freeze student eligibility
-          this.http.put(`http://localhost:8080/api/students/${studentId}`, { freeze: true }).subscribe({
+          this.http.put(`${environment.baseUrl}/placements-app/update-student/${studentId}`, { freeze: true }).subscribe({
             next: () => {
               this.showToast(`Student ${student.name || studentRegisterNo} has been automatically frozen.`);
               // Update local state freeze status
@@ -440,9 +453,9 @@ export class DrivesComponent implements OnInit {
           });
 
           // 2. Auto-reject other active applications
-          this.http.get<any[]>('http://localhost:8080/applications').subscribe({
+          this.http.get<any[]>(environment.baseUrl + '/placements-app/list-applications').subscribe({
             next: (apps) => {
-              const appsList = apps && (apps as any).data ? (apps as any).data : (Array.isArray(apps) ? apps : []);
+              const appsList = extractDataArray(apps);
               const otherApps = appsList.filter((app: any) => {
                 const isSameStudent = String(app.studentId) === String(studentId) ||
                   (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim();
@@ -532,43 +545,46 @@ export class DrivesComponent implements OnInit {
     const startVal = this.createOpens || new Date().toISOString().substring(0, 10);
     const endVal = this.createCloses || new Date().toISOString().substring(0, 10);
 
-    const backendPayload = {
-      placementCode: codeVal,
-      companyId: companyIdVal,
-      companyName: companyNameVal,
-      batchCode: '2026',
-      driveStart: startVal,
-      driveEnd: endVal,
-      jobs: [{
+    const backendPayload: any = {
+      companyCode_PlacementDrive_Text: codeVal,
+      companyName_PlacementDrive_Text: companyNameVal || 'TBD',
+      batchCode_PlacementDrive_Text: '2026',
+      driveStart_PlacementDrive_Date: new Date(startVal).getTime(),
+      driveEnd_PlacementDrive_Date: new Date(endVal).getTime(),
+      jobs_PlacementDrive_DocumentArray: [{
         jobId: 'J' + Math.floor(100 + Math.random() * 900),
-        companyId: companyIdVal,
-        role: this.createRole || 'Software Engineer',
-        Description: 'Placement Job Description',
-        eligibleBatches: '2026',
-        employmentType: this.createType || 'Full-Time',
-        packageLPA: this.createPackage ? parseFloat(this.createPackage.replace(/[^\d.]/g, '')) || 6.0 : 6.0,
-        minCGPA: 6.0,
-        active: true,
-        allowBacklog: false,
-        fields: []
+        role_PlacementDrive_Text: this.createRole || 'Software Engineer',
+        description_PlacementDrive_Text: 'Placement Job Description',
+        eligibleBatches_PlacementDrive_TextArray: ['2026'],
+        employmentType_PlacementDrive_Text: this.createType || 'Full-Time',
+        packageLpa_PlacementDrive_Text: String(this.createPackage ? parseFloat(this.createPackage.replace(/[^\d.]/g, '')) || 6.0 : 6.0),
+        minCgpa_PlacementDrive_Double: 6.0,
+        active_PlacementDrive_Bool: true,
+        allowBacklog_PlacementDrive_Bool: false,
+        fields_PlacementDrive_DocumentArray: []
       }]
     };
 
     this.placementApi.createDrive(backendPayload).subscribe({
       next: (res: any) => {
-        const created = res && res.data ? res.data : backendPayload;
+        const created = res && (res.responseData?.data || res.responseData || res.data) ? (res.responseData?.data || res.responseData || res.data) : backendPayload;
+        // Backend returns {} or [] for success without payload
+        const isEmptyObj = Object.keys(created).length === 0 && created.constructor === Object;
+        const isArray = Array.isArray(created) && created.length === 0;
+        const finalData = (isArray || isEmptyObj) ? backendPayload : created;
+        
         const mappedDrive: PlacementDrive = {
-          id: created._id || created.id || String(this.drives.length + 1),
-          companyName: created.companyName,
-          role: created.jobs?.[0]?.role || this.createRole,
-          type: created.jobs?.[0]?.employmentType || this.createType,
-          packageCTC: created.jobs?.[0]?.packageLPA ? `${created.jobs[0].packageLPA} LPA` : this.createPackage,
+          id: finalData._id || finalData.id || String(this.drives.length + 1),
+          companyName: finalData.companyName_PlacementDrive_Text || finalData.companyName,
+          role: (finalData.jobs_PlacementDrive_DocumentArray?.[0] || finalData.jobs?.[0])?.role_PlacementDrive_Text || this.createRole,
+          type: (finalData.jobs_PlacementDrive_DocumentArray?.[0] || finalData.jobs?.[0])?.employmentType_PlacementDrive_Text || this.createType,
+          packageCTC: `${(finalData.jobs_PlacementDrive_DocumentArray?.[0] || finalData.jobs?.[0])?.packageLpa_PlacementDrive_Text || this.createPackage} LPA`,
           location: this.createLocation || 'TBD',
           status: 'open',
           applicationsCount: 0,
-          openDate: this.formatDate(created.driveStart || this.createOpens),
-          closeDate: this.formatDate(created.driveEnd || this.createCloses),
-          minimumCgpa: created.jobs?.[0]?.minCGPA || 6.0
+          openDate: this.formatDate(finalData.driveStart_PlacementDrive_Date || this.createOpens),
+          closeDate: this.formatDate(finalData.driveEnd_PlacementDrive_Date || this.createCloses),
+          minimumCgpa: (finalData.jobs_PlacementDrive_DocumentArray?.[0] || finalData.jobs?.[0])?.minCgpa_PlacementDrive_Double || 6.0
         };
         this.drives.push(mappedDrive);
         this.filter();
@@ -633,7 +649,7 @@ export class DrivesComponent implements OnInit {
 
     this.placementApi.updateDrive(placementId, parentPayload).subscribe({
       next: (parentRes: any) => {
-        const updatedParent = parentRes && parentRes.data ? parentRes.data : parentRes;
+        const updatedParent = parentRes && (parentRes.responseData?.data || parentRes.responseData || parentRes.data) ? (parentRes.responseData?.data || parentRes.responseData || parentRes.data) : parentRes;
 
         if (jobId.startsWith('J')) {
           const jobPayload = {
@@ -649,7 +665,7 @@ export class DrivesComponent implements OnInit {
             fields: []
           };
 
-          this.http.put(`http://localhost:8080/placements/${placementId}/jobs/${jobId}`, jobPayload).subscribe({
+          this.http.put(`${environment.baseUrl}/placements-app/placements/${placementId}/jobs/${jobId}`, jobPayload).subscribe({
             next: (jobRes: any) => {
               this.updateLocalDriveState(jobId, updatedParent, jobPayload);
             },

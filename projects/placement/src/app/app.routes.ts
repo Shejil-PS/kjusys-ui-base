@@ -3,18 +3,18 @@ import { SharedAuthComponent } from '@libs/shared-auth';
 import { NavigationComponent } from './modules/navigation/navigation.component';
 
 export const APP_ROUTES: Routes = [
-  {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
-  },
-  {
-    path: 'login',
-    component: SharedAuthComponent,
-    data: {
-      module: 'placement',
-    },
-  },
+  // {
+  //   path: '',
+  //   redirectTo: 'login',
+  //   pathMatch: 'full',
+  // },
+  // {
+  //   path: 'login',
+  //   component: SharedAuthComponent,
+  //   data: {
+  //     module: 'placement',
+  //   },
+  // },
   {
     path: 'kjusys',
     component: NavigationComponent,
@@ -25,8 +25,8 @@ export const APP_ROUTES: Routes = [
           import('./modules/dashboard/dashboard.module')
             .then((m) => m.DashboardModule)
             .catch((error) => {
-               console.error('Error loading DashboardModule', error);
-               throw error;
+              console.error('Error loading DashboardModule', error);
+              throw error;
             }),
       },
       {
@@ -35,8 +35,8 @@ export const APP_ROUTES: Routes = [
           import('./modules/students/students.module')
             .then((m) => m.StudentsModule)
             .catch((error) => {
-               console.error('Error loading StudentsModule', error);
-               throw error;
+              console.error('Error loading StudentsModule', error);
+              throw error;
             }),
       },
       {
@@ -45,8 +45,8 @@ export const APP_ROUTES: Routes = [
           import('./modules/companies/companies.module')
             .then((m) => m.CompaniesModule)
             .catch((error) => {
-               console.error('Error loading CompaniesModule', error);
-               throw error;
+              console.error('Error loading CompaniesModule', error);
+              throw error;
             }),
       },
       {
@@ -55,8 +55,8 @@ export const APP_ROUTES: Routes = [
           import('./modules/drives/drives.module')
             .then((m) => m.DrivesModule)
             .catch((error) => {
-               console.error('Error loading DrivesModule', error);
-               throw error;
+              console.error('Error loading DrivesModule', error);
+              throw error;
             }),
       },
 

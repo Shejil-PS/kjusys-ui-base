@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { SharedToastService } from '@libs/shared-toast';
+import { environment } from '../../../environments/environment';
 
 // ── CUSTOM INLINE MODELS ──
 export interface Company {
@@ -22,11 +23,14 @@ export interface Company {
 }
 
 // ── CUSTOM INLINE API ROUTES ──
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = environment.baseUrl + '/placements-app';
 const API_ROUTES = {
   companies: {
-    base: `${API_BASE_URL}/companies`,
-    detail: (id: string) => `${API_BASE_URL}/companies/${id}`
+    list: `${API_BASE_URL}/list-comnpanies`,
+    create: `${API_BASE_URL}/create-company`,
+    detail: (id: string) => `${API_BASE_URL}/get-company/${id}`,
+    update: (id: string) => `${API_BASE_URL}/update-company/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/delete-company/${id}`
   }
 };
 
@@ -37,40 +41,40 @@ export class CompanyApiService {
   private mapToCompany(data: any): Company {
     return {
       id: data.id || data._id,
-      name: data.name || data.companyName || '',
-      industry: data.industry || '',
-      location: data.location || data.address || '',
-      contactEmail: data.contactEmail || data.email || '',
-      contactPhone: data.contactPhone || (data.phone ? String(data.phone) : ''),
-      contactPerson: data.contactPerson || '',
+      name: data.companyName_PlacementCompany_Text || data.COMPANY_NAME || data.name || data.companyName || '',
+      industry: data.industry_PlacementCompany_Text || data.INDUSTRY || data.industry || '',
+      location: data.companyAddress_PlacementCompany_Text || data.COMPANY_ADDRESS || data.location || data.address || '',
+      contactEmail: data.contactPersonEmail_PlacementCompany_Text || data.CONTACT_PERSON_EMAIL || data.contactEmail || data.email || '',
+      contactPhone: data.contactPersonPhone_PlacementCompany_Long || data.CONTACT_PERSON_PHONE || data.contactPhone || data.phone ? String(data.contactPersonPhone_PlacementCompany_Long || data.CONTACT_PERSON_PHONE || data.contactPhone || data.phone) : '',
+      contactPerson: data.contactPerson_PlacementCompany_Text || data.CONTACT_PERSON || data.contactPerson || '',
       tier: data.tier || 'TIER_1'
     };
   }
 
   private mapToBackendCompany(company: Partial<Company>): any {
     const backend: any = {};
-    if (company.id) backend._id = company.id;
+    // Do NOT send _id to backend because DocumentParser crashes on keys with less than 3 segments
     if (company.name) {
-      backend.companyName = company.name;
-      backend.companyCode = company.name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100);
+      backend.companyName_PlacementCompany_Text = company.name;
+      backend.companyCode_PlacementCompany_Text = company.name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 100);
     } else {
-      backend.companyCode = 'COM' + Math.floor(Math.random() * 100);
+      backend.companyCode_PlacementCompany_Text = 'COM' + Math.floor(Math.random() * 100);
     }
-    if (company.industry) backend.industry = company.industry;
-    if (company.contactPerson) backend.contactPerson = company.contactPerson;
-    if (company.contactEmail) backend.email = company.contactEmail;
+    backend.industry_PlacementCompany_Text = company.industry || 'General';
+    backend.contactPerson_PlacementCompany_Text = company.contactPerson || 'TBD';
+    if (company.contactEmail) backend.contactPersonEmail_PlacementCompany_Text = company.contactEmail;
     if (company.contactPhone) {
       const parsed = parseInt(company.contactPhone.replace(/\D/g, ''), 10);
-      backend.phone = isNaN(parsed) ? 0 : parsed;
+      backend.contactPersonPhone_PlacementCompany_Long = isNaN(parsed) ? 0 : parsed;
     }
-    if (company.location) backend.address = company.location;
+    backend.companyAddress_PlacementCompany_Text = company.location || 'Bengaluru';
     return backend;
   }
 
   list(): Observable<Company[]> {
-    return this.http.get<any>(API_ROUTES.companies.base).pipe(
+    return this.http.get<any>(API_ROUTES.companies.list).pipe(
       map(res => {
-        const list = res && res.value ? res.value : (Array.isArray(res) ? res : []);
+        const list = res && (res.responseData?.data || res.responseData || res.value) ? (res.responseData?.data || res.responseData || res.value) : (Array.isArray(res) ? res : []);
         return list.map((c: any) => this.mapToCompany(c));
       })
     );
@@ -84,23 +88,33 @@ export class CompanyApiService {
 
   create(company: Partial<Company>): Observable<Company> {
     const payload = this.mapToBackendCompany(company);
-    if (!payload._id) {
-      payload._id = 'C' + Math.floor(100 + Math.random() * 900);
-    }
-    return this.http.post<any>(API_ROUTES.companies.base, payload).pipe(
-      map(c => this.mapToCompany(c))
+    // Do NOT add _id manually, because backend DocumentParser expects keys with 3+ segments and crashes on _id
+    return this.http.post<any>(API_ROUTES.companies.create, payload).pipe(
+      map(res => {
+        const created = res.responseData?.data || res.responseData || res.data || res;
+        // Backend returns {} or [] for success without payload
+        if ((Array.isArray(created) && created.length === 0) || (Object.keys(created).length === 0 && created.constructor === Object)) {
+          return { ...company, id: 'C' + Math.floor(100 + Math.random() * 900) } as Company;
+        }
+        return this.mapToCompany(created);
+      })
     );
   }
 
   update(id: string, company: Partial<Company>): Observable<Company> {
     const payload = this.mapToBackendCompany(company);
-    return this.http.put<any>(API_ROUTES.companies.detail(id), payload).pipe(
-      map(c => this.mapToCompany(c))
+    // Remove _id before sending update to avoid DocumentParser crash if update ever passes through it
+    delete payload._id;
+    return this.http.put<any>(API_ROUTES.companies.update(id), payload).pipe(
+      map(res => {
+        const updated = res.responseData?.data || res.data || res;
+        return this.mapToCompany(updated);
+      })
     );
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(API_ROUTES.companies.detail(id));
+    return this.http.delete<void>(API_ROUTES.companies.delete(id));
   }
 }
 
