@@ -44,20 +44,20 @@ class StudentApiService {
   private mapToStudent(data: any): Student {
     return {
       id: data.id || data._id,
-      registerNumber: data.registerNumber || data.rollNo,
-      name: data.name || (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : data.firstName || data.lastName || ''),
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email || data.personalEmail,
-      course: data.course || data.specialization || data.departmentName || '',
-      optInStatus: data.optInStatus || (data.optedIn === true ? 'opted_in' : (data.optedIn === false ? 'opted_out' : 'pending')),
-      freezeStatus: data.freezeStatus || (data.freeze === true ? 'frozen' : 'active'),
-      cgpa: data.cgpa || 0,
-      backlogs: data.backlogs || 0,
+      registerNumber: data.registerNumber || data.rollNo || data.rollNo_PlacementStudent_Text,
+      name: data.name || (data.firstName_PlacementStudent_Text && data.lastName_PlacementStudent_Text ? `${data.firstName_PlacementStudent_Text} ${data.lastName_PlacementStudent_Text}` : (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : data.firstName || data.lastName || data.firstName_PlacementStudent_Text || data.lastName_PlacementStudent_Text || '')),
+      firstName: data.firstName || data.firstName_PlacementStudent_Text,
+      lastName: data.lastName || data.lastName_PlacementStudent_Text,
+      email: data.email || data.personalEmail || data.email_PlacementStudent_Text,
+      course: data.course || data.specialization || data.departmentName || data.departmentName_PlacementStudent_Text || data.specialization_PlacementStudent_Text || '',
+      optInStatus: data.optInStatus || (data.optedIn === true || data.optedIn_PlacementStudent_Bool === true ? 'opted_in' : (data.optedIn === false || data.optedIn_PlacementStudent_Bool === false ? 'opted_out' : 'pending')),
+      freezeStatus: data.freezeStatus || (data.freeze === true || data.freeze_PlacementStudent_Bool === true ? 'frozen' : 'active'),
+      cgpa: data.cgpa || data.cgpa_PlacementStudent_Double || 0,
+      backlogs: data.backlogs || data.backlogs_PlacementStudent_Int || 0,
       isPlaced: data.isPlaced || false,
-      gender: data.gender || '',
-      dateOfBirth: data.dob || data.dateOfBirth || '',
-      batchCode: data.batchCode || data.batch || '',
+      gender: data.gender || data.gender_PlacementStudent_Text || '',
+      dateOfBirth: data.dob || data.dateOfBirth || data.dob_PlacementStudent_Date || '',
+      batchCode: data.batchCode || data.batch || data.batchCode_PlacementStudent_Text || '',
       tenthPercentage: data.tenthPercentage || 0,
       twelfthPercentage: data.twelfthPercentage || 0,
       skills: data.skills || [],
@@ -69,25 +69,52 @@ class StudentApiService {
   private mapToBackendStudent(student: Partial<Student>): any {
     const backend: any = {};
     if (student.id) backend._id = student.id;
-    if (student.registerNumber) backend.rollNo = student.registerNumber;
-    if (student.firstName) backend.firstName = student.firstName;
-    if (student.lastName) backend.lastName = student.lastName;
-    if (student.email) backend.personalEmail = student.email;
+    if (student.registerNumber) {
+      backend.rollNo = student.registerNumber;
+      backend.rollNo_PlacementStudent_Text = student.registerNumber;
+    }
+    if (student.firstName) {
+      backend.firstName = student.firstName;
+      backend.firstName_PlacementStudent_Text = student.firstName;
+    }
+    if (student.lastName) {
+      backend.lastName = student.lastName;
+      backend.lastName_PlacementStudent_Text = student.lastName;
+    }
+    if (student.email) {
+      backend.personalEmail = student.email;
+      backend.email_PlacementStudent_Text = student.email;
+      backend.personalEmail_PlacementStudent_Text = student.email;
+    }
     if (student.course) {
       backend.specialization = student.course;
       backend.departmentName = student.course;
+      backend.specialization_PlacementStudent_Text = student.course;
+      backend.departmentName_PlacementStudent_Text = student.course;
     }
-    if (student.cgpa !== undefined) backend.cgpa = student.cgpa;
-    if (student.backlogs !== undefined) backend.backlogs = student.backlogs;
-    if (student.optInStatus) backend.optedIn = student.optInStatus === 'opted_in';
-    if (student.freezeStatus) backend.freeze = student.freezeStatus === 'frozen';
+    if (student.cgpa !== undefined) {
+      backend.cgpa = student.cgpa;
+      backend.cgpa_PlacementStudent_Double = student.cgpa;
+    }
+    if (student.backlogs !== undefined) {
+      backend.backlogs = student.backlogs;
+      backend.backlogs_PlacementStudent_Int = student.backlogs;
+    }
+    if (student.optInStatus) {
+      backend.optedIn = student.optInStatus === 'opted_in';
+      backend.optedIn_PlacementStudent_Bool = student.optInStatus === 'opted_in';
+    }
+    if (student.freezeStatus) {
+      backend.freeze = student.freezeStatus === 'frozen';
+      backend.freeze_PlacementStudent_Bool = student.freezeStatus === 'frozen';
+    }
     return backend;
   }
 
   list(): Observable<Student[]> {
     return this.http.get<any>(this.base).pipe(
       map(res => {
-        const list = res && res.responseData.data ? res.responseData.data : (Array.isArray(res) ? res : []);
+        const list = res && res.responseData?.data ? res.responseData.data : (Array.isArray(res) ? res : []);
         return list.map((s: any) => this.mapToStudent(s));
       })
     );
@@ -101,15 +128,30 @@ class StudentApiService {
 
   updateStatus(id: string, optIn?: string, freeze?: string): Observable<Student> {
     const payload: any = {};
-    if (optIn !== undefined) payload.optedIn = optIn === 'opted_in';
-    if (freeze !== undefined) payload.freeze = freeze === 'frozen';
+    if (optIn !== undefined) {
+      payload.optedIn = optIn === 'opted_in';
+      payload.optedIn_PlacementStudent_Bool = optIn === 'opted_in';
+    }
+    if (freeze !== undefined) {
+      payload.freeze = freeze === 'frozen';
+      payload.freeze_PlacementStudent_Bool = freeze === 'frozen';
+    }
     return this.http.put<any>(`${this.updateUrl}/${id}`, payload).pipe(
-      map(s => this.mapToStudent(s))
+      map(res => this.mapToStudent(res && (res.responseData?.data || res.responseData || res.data) ? (res.responseData?.data || res.responseData || res.data) : res))
     );
   }
 
   bulkAction(payload: { ids: string[]; optIn?: string; freeze?: string }): Observable<any> {
-    return this.http.post<any>(this.bulkUrl, payload);
+    const reqPayload: any = { ids: payload.ids };
+    if (payload.optIn !== undefined) {
+      reqPayload.optedIn = payload.optIn === 'opted_in';
+      reqPayload.optedIn_PlacementStudent_Bool = payload.optIn === 'opted_in';
+    }
+    if (payload.freeze !== undefined) {
+      reqPayload.freeze = payload.freeze === 'frozen';
+      reqPayload.freeze_PlacementStudent_Bool = payload.freeze === 'frozen';
+    }
+    return this.http.post<any>(this.bulkUrl, reqPayload);
   }
 }
 
@@ -255,8 +297,10 @@ export class StudentsComponent implements OnInit {
     this.loadStudents();
   }
 
-  filter(): void {
-    this.currentPage = 1;
+  filter(resetPage: boolean = true): void {
+    if (resetPage) {
+      this.currentPage = 1;
+    }
     if (!this.searchQuery) {
       this.filteredStudents = [...this.students];
     } else {
@@ -293,7 +337,8 @@ export class StudentsComponent implements OnInit {
     if (student) {
       const nextFreeze = student.freezeStatus === 'active' ? 'frozen' : 'active';
       this.studentApi.updateStatus(id, undefined, nextFreeze).subscribe({
-        next: () => {
+        next: (updatedStudent) => {
+          // Keep local properties that might not be returned in simple updates
           student.freezeStatus = nextFreeze as any;
           this.toastService.success(`Student freeze status updated to ${nextFreeze}!`);
           this.cdr.detectChanges();
@@ -312,16 +357,14 @@ export class StudentsComponent implements OnInit {
     if (student) {
       const nextOptVal = student.optInStatus === 'opted_in' ? 'opted_out' : 'opted_in';
       this.studentApi.updateStatus(id, nextOptVal, undefined).subscribe({
-        next: () => {
+        next: (updatedStudent) => {
           student.optInStatus = nextOptVal as any;
           this.toastService.success(`Student opt-in status updated to ${nextOptVal}!`);
-          this.filter();
           this.cdr.detectChanges();
         },
         error: () => {
           student.optInStatus = nextOptVal as any;
           this.toastService.success(`Student opt-in status updated to ${nextOptVal} (offline simulation)!`);
-          this.filter();
           this.cdr.detectChanges();
         }
       });
@@ -468,10 +511,11 @@ export class StudentsComponent implements OnInit {
             updatedStudents.forEach(updated => {
               const idx = this.students.findIndex(orig => orig.id === updated.id);
               if (idx !== -1) {
-                this.students[idx] = updated;
+                // Merge to avoid losing local fields not sent back by simple updates
+                this.students[idx] = { ...this.students[idx], ...updated, optInStatus: updated.optInStatus, freezeStatus: updated.freezeStatus };
               }
             });
-            this.filter();
+            this.filter(false);
             this.setBulkBusy(false);
             this.closeBulkUpdate();
             this.toastService.success('Bulk status updates applied successfully!');
@@ -489,7 +533,7 @@ export class StudentsComponent implements OnInit {
                 this.students[idx] = { ...this.students[idx], optInStatus: r.updateOptIn || s.optInStatus, freezeStatus: r.updateFreeze || s.freezeStatus, name: r.name || s.name };
               }
             });
-            this.filter();
+            this.filter(false);
             this.setBulkBusy(false);
             this.closeBulkUpdate();
             this.toastService.success('Bulk status updates applied successfully (offline simulation)!');
@@ -522,10 +566,10 @@ export class StudentsComponent implements OnInit {
             updatedStudents.forEach(updated => {
               const idx = this.students.findIndex(orig => orig.id === updated.id);
               if (idx !== -1) {
-                this.students[idx] = updated;
+                this.students[idx] = { ...this.students[idx], ...updated, optInStatus: updated.optInStatus, freezeStatus: updated.freezeStatus };
               }
             });
-            this.filter();
+            this.filter(false);
             this.setBulkBusy(false);
             this.closeBulkUpdate();
             this.toastService.success('Bulk status updates applied successfully!');
@@ -537,7 +581,7 @@ export class StudentsComponent implements OnInit {
               if (optinVal) s.optInStatus = optinVal as any;
               if (freezeVal) s.freezeStatus = freezeVal as any;
             });
-            this.filter();
+            this.filter(false);
             this.setBulkBusy(false);
             this.closeBulkUpdate();
             this.toastService.success('Bulk status updates applied successfully (offline simulation)!');

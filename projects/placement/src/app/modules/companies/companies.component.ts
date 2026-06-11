@@ -40,7 +40,7 @@ export class CompanyApiService {
 
   private mapToCompany(data: any): Company {
     return {
-      id: data.id || data._id,
+      id: data._id || data.id || data.companyCode_PlacementCompany_Text || data.COMPANY_CODE,
       name: data.companyName_PlacementCompany_Text || data.COMPANY_NAME || data.name || data.companyName || '',
       industry: data.industry_PlacementCompany_Text || data.INDUSTRY || data.industry || '',
       location: data.companyAddress_PlacementCompany_Text || data.COMPANY_ADDRESS || data.location || data.address || '',

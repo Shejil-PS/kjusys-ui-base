@@ -347,34 +347,37 @@ export class DrivesComponent implements OnInit {
 
         if (candidatesList && candidatesList.length > 0) {
           this.candidates = candidatesList.map((c: any, i: number) => {
+            const studentReg = c.studentRegisterNumber || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || '';
             const student = studentsList.find((s: any) => s.id === c.studentId ||
-              (s.rollNo || s.registerNumber || '').toLowerCase().trim() === (c.studentRegisterNumber || c.rollNo || '').toLowerCase().trim());
+              (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === studentReg.toLowerCase().trim());
 
-            const fullName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : '';
+            const fullName = (student?.firstName_PlacementStudent_Text && student?.lastName_PlacementStudent_Text) 
+              ? `${student.firstName_PlacementStudent_Text} ${student.lastName_PlacementStudent_Text}` 
+              : `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
 
             return {
               id: c.applicationId || c._id || c.id,
-              name: c.studentName || fullName || student?.name || '',
-              applied: c.appliedDate || '02-05-2026',
-              reg: c.studentRegisterNumber || c.rollNo || student?.rollNo || student?.registerNumber || '22MCAA0' + (i + 1),
-              course: student?.specialization || student?.course || student?.departmentName || c.course || 'Master of Computer Applications',
-              agg: student ? `${Math.round((student.cgpa || 0) * 10)}%` : '85%',
+              name: c.studentName || c.studentName_PlacementDriveCandidate_Text || fullName || student?.name || '',
+              applied: c.appliedDate || c.appliedDate_PlacementDriveCandidate_Date || '02-05-2026',
+              reg: c.studentRegisterNumber || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || student?.rollNo || student?.registerNumber || student?.rollNo_PlacementStudent_Text || '22MCAA0' + (i + 1),
+              course: student?.specialization || student?.course || student?.departmentName || student?.specialization_PlacementStudent_Text || student?.departmentName_PlacementStudent_Text || c.course || c.course_PlacementDriveCandidate_Text || 'Master of Computer Applications',
+              agg: student ? `${Math.round((student.cgpa || student.cgpa_PlacementStudent_Double || 0) * 10)}%` : '85%',
               tenth: student?.tenthPercentage ? `${student.tenthPercentage}%` : '90%',
               twelfth: student?.twelfthPercentage ? `${student.twelfthPercentage}%` : '89%',
-              backlogs: student?.backlogs !== undefined ? (student.backlogs === 0 ? '-' : String(student.backlogs)) : '-',
-              status: c.status || '—',
-              optIn: (student?.optedIn === true || student?.optInStatus === 'opted_in') ? 'Opted In' : 'Pending',
-              freeze: student?.freeze === true ? 'Frozen' : 'Active',
-              email: student?.personalEmail || student?.email || c.email || '',
-              phone: student?.phone || c.phone || '',
-              gender: student?.gender || c.gender || '',
-              dateOfBirth: student?.dob || student?.dateOfBirth || c.dateOfBirth || c.dob || '',
-              panCardNo: c.panCardNo || '—',
-              aadharCardNo: c.aadharCardNo || '—',
-              permanentAddress: c.permanentAddress || '—',
-              presentAddress: c.presentAddress || '—',
-              resumeUrl: student?.resumeUrl || c.resumeUrl || '',
-              skills: student?.skills || [],
+              backlogs: (student?.backlogs !== undefined || student?.backlogs_PlacementStudent_Int !== undefined) ? ((student.backlogs || student.backlogs_PlacementStudent_Int) === 0 ? '-' : String(student.backlogs || student.backlogs_PlacementStudent_Int)) : '-',
+              status: c.status || c.applicationStatus || c.applicationStatus_PlacementDriveCandidate_Text || '—',
+              optIn: (student?.optedIn === true || student?.optedIn_PlacementStudent_Bool === true || student?.optInStatus === 'opted_in') ? 'Opted In' : 'Pending',
+              freeze: (student?.freeze === true || student?.freeze_PlacementStudent_Bool === true) ? 'Frozen' : 'Active',
+              email: student?.personalEmail || student?.email || student?.personalEmail_PlacementStudent_Text || student?.email_PlacementStudent_Text || c.email || c.email_PlacementDriveCandidate_Text || '',
+              phone: student?.phone || student?.phone_PlacementStudent_Text || c.phone || c.phone_PlacementDriveCandidate_Text || '',
+              gender: student?.gender || student?.gender_PlacementStudent_Text || c.gender || c.gender_PlacementDriveCandidate_Text || '',
+              dateOfBirth: student?.dob || student?.dateOfBirth || student?.dob_PlacementStudent_Date || c.dateOfBirth || c.dob || c.dob_PlacementDriveCandidate_Date || '',
+              panCardNo: c.panCardNo || c.panCardNo_PlacementDriveCandidate_Text || '—',
+              aadharCardNo: c.aadharCardNo || c.aadharCardNo_PlacementDriveCandidate_Text || '—',
+              permanentAddress: c.permanentAddress || c.permanentAddress_PlacementDriveCandidate_Text || '—',
+              presentAddress: c.presentAddress || c.presentAddress_PlacementDriveCandidate_Text || '—',
+              resumeUrl: student?.resumeUrl || c.resumeUrl || c.resumeUrl_PlacementDriveCandidate_Text || '',
+              skills: student?.skills || c.skills_PlacementDriveCandidate_TextArray || [],
               rawStudent: student
             };
           });
@@ -428,9 +431,9 @@ export class DrivesComponent implements OnInit {
     if (!studentRegisterNo) return;
     this.studentApi.list().subscribe({
       next: (students) => {
-        const studentsList = extractDataArray(students);
+        const studentsList = Array.isArray(students) ? students : ((students as any).responseData?.data || []);
         const student = studentsList.find((s: any) =>
-          (s.registerNumber || s.rollNo || s.id || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim()
+          (s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || s.id || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim()
         );
         if (student) {
           const studentId = student.id || student._id;
@@ -457,8 +460,8 @@ export class DrivesComponent implements OnInit {
             next: (apps) => {
               const appsList = extractDataArray(apps);
               const otherApps = appsList.filter((app: any) => {
-                const isSameStudent = String(app.studentId) === String(studentId) ||
-                  (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim();
+                const isSameStudent = String(app.studentId) === String(studentId) || 
+                  (app.studentRegisterNumber || app.studentRegisterNumber_PlacementDriveCandidate_Text || app.rollNo || '').toLowerCase().trim() === studentRegisterNo.toLowerCase().trim();
                 const isSameDrive = app.driveId === currentDriveId || app.placementId === currentDriveId || app.jobId === currentDriveId;
                 const isNotSelectedOrRejected = app.status !== 'Selected' && app.status !== 'SELECTED' && app.status !== 'Rejected' && app.status !== 'REJECTED';
                 return isSameStudent && !isSameDrive && isNotSelectedOrRejected;
@@ -642,9 +645,9 @@ export class DrivesComponent implements OnInit {
     const placementId = this.editingDrive.placementId || jobId;
 
     const parentPayload = {
-      companyName: this.editCompany,
-      driveStart: this.editOpens,
-      driveEnd: this.editCloses
+      companyName_PlacementDrive_Text: this.editCompany,
+      driveStart_PlacementDrive_Date: this.editOpens,
+      driveEnd_PlacementDrive_Date: this.editCloses
     };
 
     this.placementApi.updateDrive(placementId, parentPayload).subscribe({
@@ -653,16 +656,16 @@ export class DrivesComponent implements OnInit {
 
         if (jobId.startsWith('J')) {
           const jobPayload = {
-            jobId: jobId,
-            companyId: updatedParent.companyId || 'C123',
-            role: this.editRole,
-            Description: 'Placement Job Description',
-            eligibleBatches: '2026',
-            employmentType: this.editType,
-            packageLPA: this.editPackage ? parseFloat(String(this.editPackage).replace(/[^\d.]/g, '')) || 6.0 : 6.0,
-            minCGPA: this.editingDrive?.minimumCgpa || 6.0,
-            active: this.editingDrive?.status !== 'closed',
-            fields: []
+            jobId_PlacementDrive_Text: jobId,
+            companyId_PlacementDrive_Text: updatedParent.companyId_PlacementDrive_Text || updatedParent.companyId || 'C123',
+            role_PlacementDrive_Text: this.editRole,
+            description_PlacementDrive_Text: 'Placement Job Description',
+            eligibleBatches_PlacementDrive_TextArray: ['2026'],
+            employmentType_PlacementDrive_Text: this.editType,
+            packageLpa_PlacementDrive_Text: String(this.editPackage ? parseFloat(String(this.editPackage).replace(/[^\d.]/g, '')) || 6.0 : 6.0),
+            minCgpa_PlacementDrive_Double: this.editingDrive?.minimumCgpa || 6.0,
+            active_PlacementDrive_Bool: this.editingDrive?.status !== 'closed',
+            fields_PlacementDrive_DocumentArray: []
           };
 
           this.http.put(`${environment.baseUrl}/placements-app/placements/${placementId}/jobs/${jobId}`, jobPayload).subscribe({
@@ -705,15 +708,13 @@ export class DrivesComponent implements OnInit {
     if (idx !== -1) {
       this.drives[idx] = {
         ...this.drives[idx],
-        companyName: updatedParent.companyName || this.editCompany,
-        openDate: this.formatDate(updatedParent.driveStart || this.editOpens),
-        closeDate: this.formatDate(updatedParent.driveEnd || this.editCloses)
+        companyName: this.editCompany,
+        role: this.editRole,
+        type: this.editType,
+        packageCTC: this.editPackage,
+        openDate: this.formatDate(this.editOpens),
+        closeDate: this.formatDate(this.editCloses)
       };
-      if (updatedJob) {
-        this.drives[idx].role = updatedJob.role;
-        this.drives[idx].type = updatedJob.employmentType;
-        this.drives[idx].packageCTC = `${updatedJob.packageLPA} LPA`;
-      }
     }
     this.filter();
     this.closeEditModal();
@@ -1003,18 +1004,18 @@ export class DrivesComponent implements OnInit {
       const s = c.rawStudent || {};
 
       selectedFields.forEach(f => {
-        if (f.id === 'rollNo') row[f.label] = s.rollNo || c.reg || '';
-        else if (f.id === 'firstName') row[f.label] = s.firstName || c.name.split(' ')[0] || '';
-        else if (f.id === 'lastName') row[f.label] = s.lastName || c.name.split(' ').slice(1).join(' ') || '';
-        else if (f.id === 'gender') row[f.label] = s.gender || c.gender || '—';
-        else if (f.id === 'dob') row[f.label] = s.dob || c.dateOfBirth || '—';
-        else if (f.id === 'section') row[f.label] = s.section || '—';
-        else if (f.id === 'specialization') row[f.label] = s.specialization || c.course || '—';
-        else if (f.id === 'departmentName') row[f.label] = s.departmentName || '—';
-        else if (f.id === 'personalEmail') row[f.label] = s.personalEmail || c.email || '—';
-        else if (f.id === 'batchCode') row[f.label] = s.batchCode || '—';
-        else if (f.id === 'backlogs') row[f.label] = s.backlogs !== undefined ? s.backlogs : (c.backlogs || '—');
-        else if (f.id === 'cgpa') row[f.label] = s.cgpa !== undefined ? s.cgpa : (c.agg || '—');
+        if (f.id === 'rollNo') row[f.label] = s.rollNo || s.rollNo_PlacementStudent_Text || c.reg || '';
+        else if (f.id === 'firstName') row[f.label] = s.firstName || s.firstName_PlacementStudent_Text || c.name.split(' ')[0] || '';
+        else if (f.id === 'lastName') row[f.label] = s.lastName || s.lastName_PlacementStudent_Text || c.name.split(' ').slice(1).join(' ') || '';
+        else if (f.id === 'gender') row[f.label] = s.gender || s.gender_PlacementStudent_Text || c.gender || '—';
+        else if (f.id === 'dob') row[f.label] = s.dob || s.dob_PlacementStudent_Date || s.dateOfBirth || c.dateOfBirth || '—';
+        else if (f.id === 'section') row[f.label] = s.section || s.section_PlacementStudent_Text || '—';
+        else if (f.id === 'specialization') row[f.label] = s.specialization || s.specialization_PlacementStudent_Text || c.course || '—';
+        else if (f.id === 'departmentName') row[f.label] = s.departmentName || s.departmentName_PlacementStudent_Text || '—';
+        else if (f.id === 'personalEmail') row[f.label] = s.personalEmail || s.personalEmail_PlacementStudent_Text || c.email || '—';
+        else if (f.id === 'batchCode') row[f.label] = s.batchCode || s.batchCode_PlacementStudent_Text || '—';
+        else if (f.id === 'backlogs') row[f.label] = (s.backlogs !== undefined || s.backlogs_PlacementStudent_Int !== undefined) ? (s.backlogs || s.backlogs_PlacementStudent_Int) : (c.backlogs || '—');
+        else if (f.id === 'cgpa') row[f.label] = (s.cgpa !== undefined || s.cgpa_PlacementStudent_Double !== undefined) ? (s.cgpa || s.cgpa_PlacementStudent_Double) : (c.agg || '—');
         else if (f.id === 'optIn') row[f.label] = c.optIn || '—';
         else if (f.id === 'freeze') row[f.label] = c.freeze || '—';
         else if (f.id === 'companyName') row[f.label] = this.activeDrive?.companyName || '—';

@@ -3,13 +3,13 @@
 
   <!-- SUB-PAGE: Drives List -->
   <div *ngIf="currentSubpage === 'list'" class="drives-subpage active">
-    <div class="breadcrumb flex items-center gap-1.5 text-gray-400 mb-1 text-xs">
-      <span>Placements</span><span>/</span>
-      <span class="text-gray-700 font-medium">Drives</span>
-    </div>
-    
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="page-title text-lg font-bold text-gray-900">Drives</h1>
+    <div class="flex items-end justify-between mb-5">
+      <div>
+        <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#989898; margin-bottom:4px;">
+          Placements / <span style="color:#111827; font-weight:700;">Drives</span>
+        </div>
+        <h1 style="font-family:'DM Sans',sans-serif; font-size:18px; font-weight:700; color:#000;">Drives</h1>
+      </div>
     </div>
 
     <!-- Drives Card -->
@@ -80,14 +80,14 @@
 
   <!-- SUB-PAGE: Candidates -->
   <div *ngIf="currentSubpage === 'candidates'" class="drives-subpage active">
-    <div class="breadcrumb flex items-center gap-1.5 text-gray-400 mb-1 text-xs">
-      <span>Placements</span><span>/</span>
-      <span class="text-gray-400 cursor-pointer hover:underline hover:text-gray-600" (click)="showDrivesSubpage('list')">Drives</span>
-      <span>/</span>
-      <span class="text-gray-700 font-medium">{{ activeDrive?.companyName }}</span>
+    <div class="flex items-end justify-between mb-5">
+      <div>
+        <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#989898; margin-bottom:4px;">
+          Placements / <span class="cursor-pointer hover:underline" (click)="showDrivesSubpage('list')">Drives</span> / <span style="color:#111827; font-weight:700;">{{ activeDrive?.companyName }}</span>
+        </div>
+        <h1 style="font-family:'DM Sans',sans-serif; font-size:18px; font-weight:700; color:#000;">Drives</h1>
+      </div>
     </div>
-    
-    <h1 class="page-title text-lg font-bold text-gray-900 mb-4">Drives</h1>
 
     <!-- Candidates Header Summary Card -->
     <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex items-center justify-between flex-wrap gap-3 shadow-sm">
@@ -523,7 +523,7 @@
      MODAL: Send Email
  ====================================================== -->
 <div *ngIf="showSendEmailModal" class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-gray-100" style="display:flex; flex-direction:column; max-height:90vh;">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-gray-100" style="display:flex; flex-direction:column; max-height:75vh; margin-top:20px;">
     
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
       <h2 class="text-sm font-semibold text-gray-900">Send Email</h2>
@@ -572,13 +572,13 @@
       <div class="modal-field space-y-1">
         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
         <input type="text" [(ngModel)]="emailSubject" placeholder="e.g. Interview Schedule for Apple Drive" 
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
       </div>
 
       <div class="modal-field space-y-1">
         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Message</label>
         <textarea [(ngModel)]="emailMessage" rows="4" placeholder="Write your message here..." 
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none"></textarea>
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none"></textarea>
       </div>
 
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5">
@@ -590,18 +590,19 @@
           This operation runs as a single transactional batch. Any failure will trigger automatic rollback to preserve data integrity.
         </span>
       </div>
-
-      <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 flex-shrink-0">
-        <button type="button" (click)="closeSendEmailModal()" class="btn-outline px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Cancel</button>
-        <button type="button" (click)="sendEmail()" class="btn-primary flex items-center justify-center gap-1.5 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-          Send Email
-        </button>
-      </div>
-
     </div>
+
+    <!-- Footer Buttons -->
+    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0">
+      <button type="button" (click)="closeSendEmailModal()" class="btn-outline px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 text-xs font-semibold">Cancel</button>
+      <button type="button" (click)="sendEmail()" class="btn-primary flex items-center justify-center gap-1.5 bg-blue-600 text-white px-5 py-2 rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+        Send Email
+      </button>
+    </div>
+
   </div>
 </div>
 

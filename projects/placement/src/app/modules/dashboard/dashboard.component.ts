@@ -189,18 +189,19 @@ export class DashboardComponent implements OnInit {
   reportsOpen = false;
   reportsTab: 'std' | 'custom' = 'std';
   reportTemplateName = '';
+  selectedStandardReport: string = 'placed';
   selectedStandardFieldsCount = 0;
   selectedCustomFieldsCount = 0;
 
   standardReportFields = [
-    { key: 'placed', label: 'Placed', checked: false, category: 'Placement' },
-    { key: 'rejected', label: 'Rejected', checked: false, category: 'Placement' },
-    { key: 'offers', label: 'Offers', checked: false, category: 'Placement' },
-    { key: 'rate', label: 'Rate', checked: false, category: 'Placement' },
-    { key: 'companies', label: 'Companies', checked: false, category: 'Companies' },
-    { key: 'visits', label: 'Visits', checked: false, category: 'Companies' },
-    { key: 'placements', label: 'Placements', checked: false, category: 'Companies' },
-    { key: 'selections', label: 'Selections', checked: false, category: 'Companies' }
+    { key: 'placed', label: 'Placed Students', checked: false, category: 'Placement' },
+    { key: 'rejected', label: 'Rejected Applications', checked: false, category: 'Placement' },
+    { key: 'offers', label: 'Drive Details & Offers', checked: false, category: 'Placement' },
+    { key: 'rate', label: 'Placement Rate by Dept', checked: false, category: 'Placement' },
+    { key: 'companies', label: 'Company Directory', checked: false, category: 'Companies' },
+    { key: 'visits', label: 'Company Visits & Drives', checked: false, category: 'Companies' },
+    { key: 'placements', label: 'Placement Rate by Company', checked: false, category: 'Companies' },
+    { key: 'selections', label: 'Company Selections & Students', checked: false, category: 'Companies' }
   ];
 
   customReportFields = [
@@ -256,21 +257,22 @@ export class DashboardComponent implements OnInit {
         if (drives && drives.length > 0) {
           const flatDrives: any[] = [];
           drives.forEach((p: any) => {
-            if (p.jobs && Array.isArray(p.jobs)) {
-              p.jobs.forEach((j: any) => {
+            const jobsArray = p.jobs || p.jobs_PlacementDrive_DocumentArray;
+            if (jobsArray && Array.isArray(jobsArray)) {
+              jobsArray.forEach((j: any) => {
                 flatDrives.push({
-                  id: j.jobId || p._id || p.id,
-                  companyName: p.companyName || '',
-                  role: j.role || '',
-                  type: j.employmentType || j.type || 'Full-Time',
-                  packageCTC: j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || ''),
+                  id: j.jobId || j.jobId_PlacementDrive_Text || p._id || p.id,
+                  companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
+                  role: j.role || j.role_PlacementDrive_Text || '',
+                  type: j.employmentType || j.employmentType_PlacementDrive_Text || j.type || 'Full-Time',
+                  packageCTC: j.packageLpa_PlacementDrive_Text ? `${j.packageLpa_PlacementDrive_Text} LPA` : (j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || '')),
                   location: p.address || j.location || 'Bengaluru, India',
-                  status: j.active === false ? 'Intake Closed' : 'Intake Open',
-                  statusClass: j.active === false ? 'badge-closed' : 'badge-open',
-                  openDate: p.driveStart ? this.formatDate(p.driveStart) : (p.openDate ? this.formatDate(p.openDate) : ''),
-                  closeDate: p.driveEnd ? this.formatDate(p.driveEnd) : (p.closeDate ? this.formatDate(p.closeDate) : ''),
-                  minimumCgpa: j.minCGPA || j.minimumCgpa || 6.0,
-                  eligibleCourses: j.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
+                  status: j.active === false || j.active_PlacementDrive_Bool === false ? 'Intake Closed' : 'Intake Open',
+                  statusClass: j.active === false || j.active_PlacementDrive_Bool === false ? 'badge-closed' : 'badge-open',
+                  openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.driveStart ? this.formatDate(p.driveStart) : (p.openDate ? this.formatDate(p.openDate) : '')),
+                  closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.driveEnd ? this.formatDate(p.driveEnd) : (p.closeDate ? this.formatDate(p.closeDate) : '')),
+                  minimumCgpa: j.minCGPA || j.minCgpa_PlacementDrive_Double || j.minimumCgpa || 6.0,
+                  eligibleCourses: j.eligibleBatches_PlacementDrive_TextArray || j.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
                 });
               });
             } else {
@@ -278,15 +280,15 @@ export class DashboardComponent implements OnInit {
               const isOpen = statusLower === 'open' || statusLower === 'ongoing' || statusLower === 'upcoming' || statusLower === 'intake open';
               flatDrives.push({
                 id: p._id || p.id,
-                companyName: p.companyName || '',
+                companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
                 role: p.role || '',
                 type: p.type || 'Full-Time',
                 packageCTC: p.packageCTC || '',
                 location: p.location || 'Bengaluru, India',
                 status: isOpen ? 'Intake Open' : 'Intake Closed',
                 statusClass: isOpen ? 'badge-open' : 'badge-closed',
-                openDate: p.openDate ? this.formatDate(p.openDate) : '',
-                closeDate: p.closeDate ? this.formatDate(p.closeDate) : '',
+                openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.openDate ? this.formatDate(p.openDate) : ''),
+                closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.closeDate ? this.formatDate(p.closeDate) : ''),
                 minimumCgpa: p.minimumCgpa || 6.0,
                 eligibleCourses: p.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
               });
@@ -361,10 +363,10 @@ export class DashboardComponent implements OnInit {
 
     // Filter students belonging to this academic year batch
     const students = this.allStudents.filter(s => {
-      const code = s.batchCode || '';
+      const code = s.batchCode || s.batchCode_PlacementStudent_Text || '';
       const match = code.match(/^\d{2}/);
       if (match) return match[0] === targetYearPrefix;
-      const reg = s.rollNo || s.registerNumber || '';
+      const reg = s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '';
       const matchReg = reg.match(/^\d{2}/);
       if (matchReg) return matchReg[0] === targetYearPrefix;
       return false;
@@ -376,6 +378,7 @@ export class DashboardComponent implements OnInit {
       if (app.status === 'Selected' || app.status === 'SELECTED') {
         if (app.studentId) placedStudentsSet.add(String(app.studentId).toLowerCase().trim());
         if (app.rollNo) placedStudentsSet.add(String(app.rollNo).toLowerCase().trim());
+        if (app.rollNo_PlacementStudent_Text) placedStudentsSet.add(String(app.rollNo_PlacementStudent_Text).toLowerCase().trim());
         if (app.studentRegisterNumber) placedStudentsSet.add(String(app.studentRegisterNumber).toLowerCase().trim());
       }
     });
@@ -383,12 +386,12 @@ export class DashboardComponent implements OnInit {
     const isStudentPlaced = (s: any): boolean => {
       if (s.isPlaced === true || s.status === 'Selected') return true;
       const sId = String(s.id || s._id || '').toLowerCase().trim();
-      const sRoll = String(s.registerNumber || s.rollNo || '').toLowerCase().trim();
+      const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
       return placedStudentsSet.has(sId) || (!!sRoll && placedStudentsSet.has(sRoll));
     };
 
     const isStudentOptedIn = (s: any): boolean => {
-      return s.optInStatus === 'opted_in' || s.optedIn === true;
+      return s.optInStatus === 'opted_in' || s.optedIn === true || s.optedIn_PlacementStudent_Bool === true;
     };
 
     const optedIn = students.filter(s => isStudentOptedIn(s)).length;
@@ -410,7 +413,7 @@ export class DashboardComponent implements OnInit {
       if (app.status === 'SELECTED' || app.status === 'Selected') {
         const studentMatches = students.some(s => {
           const sId = String(s.id || s._id || '').toLowerCase().trim();
-          const sRoll = String(s.registerNumber || s.rollNo || '').toLowerCase().trim();
+          const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
           return sId === String(app.studentId || '').toLowerCase().trim() ||
                  sRoll === String(app.rollNo || '').toLowerCase().trim();
         });
@@ -449,8 +452,8 @@ export class DashboardComponent implements OnInit {
 
     // Helper to map student departments to Department names and specialization/courses
     const getSchoolAndDept = (s: any) => {
-      const dept = (s.departmentName || s.department || 'General').trim();
-      const spec = (s.specialization || s.course || 'General').trim();
+      const dept = (s.departmentName || s.departmentName_PlacementStudent_Text || s.department || 'General').trim();
+      const spec = (s.specialization || s.specialization_PlacementStudent_Text || s.course || 'General').trim();
       return { school: dept, department: spec };
     };
 
@@ -506,27 +509,24 @@ export class DashboardComponent implements OnInit {
       };
     });
 
-    // Calculate Trends Graph Points and SVG Path (7-month span from Jun to Dec to align with DB dates)
-    const monthNames = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthlyHires = Array(7).fill(0);
+    // Calculate Trends Graph Points and SVG Path (12-month academic span from Jul to Jun)
+    const monthNames = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const monthlyHires = Array(12).fill(0);
 
     this.allApplications.forEach((app: any) => {
       if (app.status === 'SELECTED' || app.status === 'Selected') {
         const studentMatches = students.some(s => {
           const sId = String(s.id || s._id || '').toLowerCase().trim();
-          const sRoll = String(s.registerNumber || s.rollNo || '').toLowerCase().trim();
+          const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
           return sId === String(app.studentId || '').toLowerCase().trim() ||
                  sRoll === String(app.rollNo || '').toLowerCase().trim();
         });
         if (studentMatches && app.appliedDate) {
           const d = new Date(app.appliedDate);
           if (!isNaN(d.getTime())) {
-            const monthVal = d.getMonth() + 1; // 1 to 12
-            let idx = -1;
-            if (monthVal >= 6 && monthVal <= 12) {
-              idx = monthVal - 6; // Jun=0, Jul=1, Aug=2, Sep=3, Oct=4, Nov=5, Dec=6
-            }
-            if (idx >= 0 && idx < 7) {
+            const m = d.getMonth(); // 0 to 11
+            const idx = m >= 6 ? m - 6 : m + 6; // Map Jul to 0, Jun to 11
+            if (idx >= 0 && idx < 12) {
               monthlyHires[idx]++;
             }
           }
@@ -538,8 +538,8 @@ export class DashboardComponent implements OnInit {
     const totalPlacedVal = placed || 220;
     const trendsData = monthNames.map((name, idx) => {
       if (monthlyHires.reduce((a, b) => a + b, 0) === 0) {
-        // Curve coefficient simulation mapping Jun to Dec
-        const coeffs = [0.02, 0.10, 0.20, 0.35, 0.55, 0.80, 1.0];
+        // Curve coefficient simulation mapping Jul to Jun
+        const coeffs = [0.01, 0.05, 0.15, 0.30, 0.50, 0.65, 0.75, 0.85, 0.92, 0.96, 0.99, 1.0];
         runningTotal = Math.round(totalPlacedVal * coeffs[idx]);
       } else {
         runningTotal += monthlyHires[idx];
@@ -553,7 +553,7 @@ export class DashboardComponent implements OnInit {
     const paddingY = 20;
 
     const points = trendsData.map((t, idx) => {
-      const x = (idx * width) / 6;
+      const x = (idx * width) / (monthNames.length - 1);
       const y = height - paddingY - (t.count / maxVal) * (height - 2 * paddingY);
       return { x, y, month: t.month, count: t.count };
     });
@@ -574,21 +574,22 @@ export class DashboardComponent implements OnInit {
     if (this.allDrives && this.allDrives.length) {
       const flatDrives: any[] = [];
       this.allDrives.forEach(p => {
-        if (p.jobs && Array.isArray(p.jobs)) {
-          p.jobs.forEach((j: any) => {
+        const jobsArray = p.jobs || p.jobs_PlacementDrive_DocumentArray;
+        if (jobsArray && Array.isArray(jobsArray)) {
+          jobsArray.forEach((j: any) => {
             flatDrives.push({
-              id: j.jobId || p._id || p.id,
-              companyName: p.companyName || '',
-              role: j.role || '',
-              type: j.employmentType || j.type || 'Full-Time',
-              packageCTC: j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || ''),
+              id: j.jobId || j.jobId_PlacementDrive_Text || p._id || p.id,
+              companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
+              role: j.role || j.role_PlacementDrive_Text || '',
+              type: j.employmentType || j.employmentType_PlacementDrive_Text || j.type || 'Full-Time',
+              packageCTC: j.packageLpa_PlacementDrive_Text ? `${j.packageLpa_PlacementDrive_Text} LPA` : (j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || '')),
               location: p.address || j.location || 'Bengaluru, India',
-              status: j.active === false ? 'Intake Closed' : 'Intake Open',
-              statusClass: j.active === false ? 'badge-closed' : 'badge-open',
-              openDate: p.driveStart ? this.formatDate(p.driveStart) : (p.openDate ? this.formatDate(p.openDate) : ''),
-              closeDate: p.driveEnd ? this.formatDate(p.driveEnd) : (p.closeDate ? this.formatDate(p.closeDate) : ''),
-              minimumCgpa: j.minCGPA || j.minimumCgpa || 6.0,
-              eligibleCourses: j.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
+              status: j.active === false || j.active_PlacementDrive_Bool === false ? 'Intake Closed' : 'Intake Open',
+              statusClass: j.active === false || j.active_PlacementDrive_Bool === false ? 'badge-closed' : 'badge-open',
+              openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.driveStart ? this.formatDate(p.driveStart) : (p.openDate ? this.formatDate(p.openDate) : '')),
+              closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.driveEnd ? this.formatDate(p.driveEnd) : (p.closeDate ? this.formatDate(p.closeDate) : '')),
+              minimumCgpa: j.minCGPA || j.minCgpa_PlacementDrive_Double || j.minimumCgpa || 6.0,
+              eligibleCourses: j.eligibleBatches_PlacementDrive_TextArray || j.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
             });
           });
         } else {
@@ -596,15 +597,15 @@ export class DashboardComponent implements OnInit {
           const isOpen = statusLower === 'open' || statusLower === 'ongoing' || statusLower === 'upcoming' || statusLower === 'intake open';
           flatDrives.push({
             id: p._id || p.id,
-            companyName: p.companyName || '',
+            companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
             role: p.role || '',
             type: p.type || 'Full-Time',
             packageCTC: p.packageCTC || '',
             location: p.location || 'Bengaluru, India',
             status: isOpen ? 'Intake Open' : 'Intake Closed',
             statusClass: isOpen ? 'badge-open' : 'badge-closed',
-            openDate: p.openDate ? this.formatDate(p.openDate) : '',
-            closeDate: p.closeDate ? this.formatDate(p.closeDate) : '',
+            openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.openDate ? this.formatDate(p.openDate) : ''),
+            closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.closeDate ? this.formatDate(p.closeDate) : ''),
             minimumCgpa: p.minimumCgpa || 6.0,
             eligibleCourses: p.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
           });
@@ -636,67 +637,172 @@ export class DashboardComponent implements OnInit {
     const csvRows: string[] = [];
 
     if (this.reportsTab === 'std') {
-      const isPlacementChecked = this.standardReportFields.some(f => f.category === 'Placement' && f.checked);
-      const isCompaniesChecked = this.standardReportFields.some(f => f.category === 'Companies' && f.checked);
-
-      if (isPlacementChecked || (!isPlacementChecked && !isCompaniesChecked)) {
-        const selectedStatuses: string[] = [];
-        const isPlacedChecked = this.standardReportFields.find(f => f.key === 'placed')?.checked;
-        const isRejectedChecked = this.standardReportFields.find(f => f.key === 'rejected')?.checked;
-        const isOffersChecked = this.standardReportFields.find(f => f.key === 'offers')?.checked;
-        const isSelectionsChecked = this.standardReportFields.find(f => f.key === 'selections')?.checked;
-
-        if (isPlacedChecked || isOffersChecked || isSelectionsChecked) {
-          selectedStatuses.push('selected');
-        }
-        if (isRejectedChecked) {
-          selectedStatuses.push('rejected');
-        }
-
+      const option = this.selectedStandardReport || 'placed';
+      
+      if (option === 'placed' || option === 'rejected') {
         const headers = ['Student Name', 'Register No', 'Course', 'Company Applied', 'Status'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
 
         this.allApplications.forEach((app: any) => {
-          const appStatus = app.status || '—';
-          const matchStatus = appStatus.toLowerCase();
-
-          if (selectedStatuses.length > 0 && !selectedStatuses.includes(matchStatus)) {
+          const appStatus = (app.status || '—').toLowerCase();
+          const targetStatus = option === 'placed' ? 'selected' : 'rejected';
+          
+          if (appStatus !== targetStatus) {
             return;
           }
 
           const student = this.allStudents.find((s: any) =>
             String(s.id) === String(app.studentId) ||
-            (s.rollNo || s.registerNumber || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim()
+            (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim()
           );
 
           const name = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : app.studentName || '—';
-          const rollNo = student ? (student.rollNo || student.registerNumber) : (app.studentRegisterNumber || app.rollNo || '—');
-          const course = student ? (student.specialization || student.course || student.departmentName) : (app.course || '—');
+          const rollNo = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || '—') : (app.studentRegisterNumber || app.rollNo || '—');
+          const course = student ? (student.specialization || student.course || student.departmentName || student.specialization_PlacementStudent_Text || '—') : (app.course || '—');
 
           const drive = this.allDrives.find((d: any) =>
-            String(d.id) === String(app.driveId) || String(d._id) === String(app.placementId)
+            String(d.id || d._id) === String(app.driveId || app.placementId)
           );
-          const company = app.companyName || drive?.companyName || '—';
+          const company = app.companyName || drive?.companyName || drive?.companyName_PlacementDrive_Text || '—';
 
-          csvRows.push(`"${name}","${rollNo}","${course}","${company}","${appStatus}"`);
+          csvRows.push(`"${name}","${rollNo}","${course}","${company}","${app.status || '—'}"`);
         });
-      } else {
-        const headers = ['Company Name', 'Job Role', 'Job Type', 'Package', 'Eligible Batches', 'Min CGPA', 'Allow Backlogs', 'Open Date', 'Close Date', 'Applications'];
+
+      } else if (option === 'offers') {
+        const headers = ['Company Name', 'Job Role', 'Job Type', 'Package', 'Eligible Batches', 'Min CGPA', 'Open Date', 'Close Date'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
 
         this.allDrives.forEach((d: any) => {
-          if (d.jobs && Array.isArray(d.jobs)) {
-            d.jobs.forEach((j: any) => {
-              const count = this.allApplications ? this.allApplications.filter((a: any) => a.jobId === j.jobId).length : 0;
-              const batches = j.eligibleBatches || d.batchCode || '—';
-              const backlogs = j.allowBacklog ? 'Allowed' : 'Not Allowed';
-              csvRows.push(`"${d.companyName}","${j.role || '—'}","${j.employmentType || j.type || '—'}","${j.packageLPA ? j.packageLPA + ' LPA' : (j.packageCTC || '—')}","${batches}","${j.minCGPA || '—'}","${backlogs}","${this.formatDate(d.driveStart || d.openDate)}","${this.formatDate(d.driveEnd || d.closeDate)}",${count}`);
+          const compName = d.companyName || d.companyName_PlacementDrive_Text || '—';
+          const openDate = d.driveStart_PlacementDrive_Date || d.driveStart || d.openDate;
+          const closeDate = d.driveEnd_PlacementDrive_Date || d.driveEnd || d.closeDate;
+
+          const jobsArray = d.jobs || d.jobs_PlacementDrive_DocumentArray;
+          if (jobsArray && Array.isArray(jobsArray)) {
+            jobsArray.forEach((j: any) => {
+              const role = j.role || j.role_PlacementDrive_Text || '—';
+              const type = j.employmentType || j.employmentType_PlacementDrive_Text || j.type || '—';
+              const pkg = j.packageLpa_PlacementDrive_Text ? j.packageLpa_PlacementDrive_Text + ' LPA' : (j.packageLPA ? j.packageLPA + ' LPA' : (j.packageCTC || '—'));
+              const batchesArr = j.eligibleBatches_PlacementDrive_TextArray || j.eligibleBatches || d.batchCode || [];
+              const batches = Array.isArray(batchesArr) ? batchesArr.join(', ') : batchesArr;
+              const minCGPA = j.minCgpa_PlacementDrive_Double || j.minCGPA || j.minimumCgpa || '—';
+
+              csvRows.push(`"${compName}","${role}","${type}","${pkg}","${batches}","${minCGPA}","${this.formatDate(openDate)}","${this.formatDate(closeDate)}"`);
             });
           } else {
-            const count = this.allApplications ? this.allApplications.filter((a: any) => a.placementId === d._id).length : 0;
-            const backlogs = d.backlogAllowed ? 'Allowed' : 'Not Allowed';
-            csvRows.push(`"${d.companyName}","${d.role || '—'}","${d.type || '—'}","${d.packageCTC || '—'}","${d.batchCode || '—'}","${d.minimumCgpa || '—'}","${backlogs}","${this.formatDate(d.openDate)}","${this.formatDate(d.closeDate)}",${count}`);
+            csvRows.push(`"${compName}","${d.role || '—'}","${d.type || '—'}","${d.packageCTC || '—'}","${d.batchCode || '—'}","${d.minimumCgpa || '—'}","${this.formatDate(openDate)}","${this.formatDate(closeDate)}"`);
           }
+        });
+
+      } else if (option === 'rate') {
+        const headers = ['School', 'Department', 'Total Opted-In', 'Placed Students', 'Placement Rate'];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        this.schools.forEach((school: any) => {
+          if (school.depts && Array.isArray(school.depts)) {
+            school.depts.forEach((dept: any) => {
+              csvRows.push(`"${school.name}","${dept.name}","${dept.total}","${dept.placed}","${dept.rate}"`);
+            });
+          }
+        });
+
+      } else if (option === 'companies') {
+        const headers = ['Company ID/Code', 'Company Name', 'Industry'];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        this.allCompanies.forEach((c: any) => {
+          const code = c.companyCode_PlacementCompany_Text || c.COMPANY_CODE || c._id || c.id || '—';
+          const name = c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name || '—';
+          const ind = c.INDUSTRY || c.industry_PlacementCompany_Text || c.industry || '—';
+          csvRows.push(`"${code}","${name}","${ind}"`);
+        });
+
+      } else if (option === 'visits') {
+        const headers = ['Company Name', 'Industry', 'Drive Role', 'Drive Type', 'Package', 'Open Date'];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        this.allDrives.forEach((d: any) => {
+          const companyName = d.companyName || d.companyName_PlacementDrive_Text || '—';
+          const comp = this.allCompanies.find(c => (c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name) === companyName);
+          const ind = comp ? (comp.INDUSTRY || comp.industry_PlacementCompany_Text || comp.industry || '—') : '—';
+          const openDate = d.driveStart_PlacementDrive_Date || d.driveStart || d.openDate;
+          
+          const jobsArray = d.jobs || d.jobs_PlacementDrive_DocumentArray;
+          if (jobsArray && Array.isArray(jobsArray)) {
+            jobsArray.forEach((j: any) => {
+              const role = j.role || j.role_PlacementDrive_Text || '—';
+              const type = j.employmentType || j.employmentType_PlacementDrive_Text || j.type || '—';
+              const pkg = j.packageLpa_PlacementDrive_Text ? j.packageLpa_PlacementDrive_Text + ' LPA' : (j.packageLPA ? j.packageLPA + ' LPA' : (j.packageCTC || '—'));
+              
+              csvRows.push(`"${companyName}","${ind}","${role}","${type}","${pkg}","${this.formatDate(openDate)}"`);
+            });
+          } else {
+            csvRows.push(`"${companyName}","${ind}","${d.role || '—'}","${d.type || '—'}","${d.packageCTC || '—'}","${this.formatDate(openDate)}"`);
+          }
+        });
+
+      } else if (option === 'placements') {
+        const headers = ['Company Name', 'Total Applied', 'Total Selected', 'Selection Rate'];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        const companyStats: { [name: string]: { applied: number; selected: number } } = {};
+
+        this.allApplications.forEach((app: any) => {
+          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(app.driveId || app.placementId));
+          const company = app.companyName || drive?.companyName || drive?.companyName_PlacementDrive_Text || 'Unknown Company';
+          if (!companyStats[company]) companyStats[company] = { applied: 0, selected: 0 };
+          
+          companyStats[company].applied++;
+          if ((app.status || '').toLowerCase() === 'selected') {
+            companyStats[company].selected++;
+          }
+        });
+
+        Object.keys(companyStats).forEach(company => {
+          const stats = companyStats[company];
+          const rate = stats.applied > 0 ? Math.round((stats.selected / stats.applied) * 100) + '%' : '0%';
+          csvRows.push(`"${company}","${stats.applied}","${stats.selected}","${rate}"`);
+        });
+
+      } else if (option === 'selections') {
+        const headers = ['Company Name', 'Job Role', 'Number of Selections', 'Selected Students (Name - Register No)'];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        const driveSelections: { [key: string]: { companyName: string, role: string, students: string[] } } = {};
+
+        this.allApplications.forEach((app: any) => {
+          if ((app.status || '').toLowerCase() !== 'selected') return;
+
+          const student = this.allStudents.find((s: any) =>
+            String(s.id) === String(app.studentId) ||
+            (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim()
+          );
+
+          const sName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : app.studentName || 'Unknown';
+          const sReg = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || 'Unknown') : (app.studentRegisterNumber || app.rollNo || 'Unknown');
+          const studentString = `${sName} (${sReg})`;
+
+          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(app.driveId || app.placementId));
+          const companyName = app.companyName || drive?.companyName || drive?.companyName_PlacementDrive_Text || 'Unknown Company';
+          
+          let role = app.role || drive?.role || '—';
+          
+          const jobsArray = drive?.jobs || drive?.jobs_PlacementDrive_DocumentArray;
+          if (app.jobId && jobsArray && Array.isArray(jobsArray)) {
+            const j = jobsArray.find((job: any) => job.jobId === app.jobId || job.jobId_PlacementDrive_Text === app.jobId);
+            if (j) role = j.role || j.role_PlacementDrive_Text || '—';
+          }
+
+          const key = companyName + '_' + role;
+          if (!driveSelections[key]) {
+            driveSelections[key] = { companyName, role, students: [] };
+          }
+          driveSelections[key].students.push(studentString);
+        });
+
+        Object.values(driveSelections).forEach(ds => {
+          const joinedStudents = ds.students.join(', ');
+          csvRows.push(`"${ds.companyName}","${ds.role}","${ds.students.length}","${joinedStudents}"`);
         });
       }
 
@@ -991,7 +1097,6 @@ export class DashboardComponent implements OnInit {
         const endVal = bd.closeDate || new Date().toISOString().substring(0, 10);
 
         const jobsPayload = [{
-          jobId_PlacementDrive_Text: 'J' + Math.floor(100 + Math.random() * 900),
           companyId_PlacementDrive_Text: companyIdVal,
           role_PlacementDrive_Text: j.role || 'Software Engineer',
           description_PlacementDrive_Text: j.desc || '',
@@ -1005,7 +1110,6 @@ export class DashboardComponent implements OnInit {
           active_PlacementDrive_Bool: true,
           allowBacklog_PlacementDrive_Bool: j.backlogAllowed || false,
           fields_PlacementDrive_DocumentArray: bd.requiresDataCollection && bd.questions ? bd.questions.map((q: any) => ({
-            fieldId_PlacementDrive_Text: 'F' + Math.floor(100 + Math.random() * 900),
             label_PlacementDrive_Text: q.label || 'Field',
             fieldType_PlacementDrive_Text: q.type || 'Short Text',
             required_PlacementDrive_Bool: q.required || false

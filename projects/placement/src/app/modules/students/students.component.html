@@ -1,9 +1,10 @@
 <!-- STUDENT PROFILE DETAILS VIEW -->
 <div class="px-6 pt-5 pb-36" *ngIf="selectedStudentId && student">
   <div class="mb-4">
-    <a (click)="clearProfile()" routerLink="/kjusys/students" class="text-xs text-blue-600 hover:underline cursor-pointer">← Back to Students</a>
+    <a (click)="clearProfile()" routerLink="/kjusys/students"
+      class="text-xs text-blue-600 hover:underline cursor-pointer">← Back to Students</a>
   </div>
-  
+
   <div class="flex flex-col md:flex-row gap-6 max-w-5xl items-start mb-8">
     <!-- Left Card: Student Profile -->
     <div class="profile-card flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-6 w-full">
@@ -14,29 +15,36 @@
 
       <div class="space-y-6 text-left">
         <div>
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Personal Information</h3>
+          <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Personal Information</h3>
           <div class="space-y-2.5 text-xs text-gray-700">
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Full Name:</span> <span class="text-gray-900 font-medium">{{ student.name }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Gender:</span> <span class="text-gray-900 font-medium">{{ student.gender || '—' }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Date of Birth:</span> <span class="text-gray-900 font-medium">{{ student.dateOfBirth || '—' }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Email:</span> <span class="text-gray-900 font-medium">{{ student.email || '—' }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Phone:</span> <span class="text-gray-900 font-medium">{{ student.phone || '—' }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Full Name:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.name }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Gender:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.gender || '—' }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Date of Birth:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.dateOfBirth || '—' }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Email:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.email || '—' }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Phone:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.phone || '—' }}</span></div>
           </div>
         </div>
 
         <div class="border-t border-gray-100 pt-4">
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Professional Details</h3>
+          <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Professional Details</h3>
           <div class="space-y-3 text-xs text-gray-700">
             <div>
-              <span class="font-semibold text-gray-400 block mb-1.5">Skills:</span> 
+              <span class="font-semibold text-gray-900 block mb-1.5">Skills:</span>
               <div class="flex flex-wrap gap-1.5" *ngIf="student.skills?.length">
-                <span *ngFor="let skill of student.skills" class="bg-gray-100 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">{{ skill }}</span>
+                <span *ngFor="let skill of student.skills"
+                  class="bg-gray-100 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">{{ skill }}</span>
               </div>
               <span *ngIf="!student.skills?.length" class="text-gray-500">—</span>
             </div>
             <div class="pt-1 flex items-center">
-              <span class="font-semibold text-gray-400 inline-block w-28">Resume:</span> 
-              <a *ngIf="student.resumeUrl" [href]="student.resumeUrl" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium">
+              <span class="font-semibold text-gray-900 inline-block w-28">Resume:</span>
+              <a *ngIf="student.resumeUrl" [href]="student.resumeUrl" target="_blank"
+                class="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium">
                 View Resume ↗
               </a>
               <span *ngIf="!student.resumeUrl" class="text-gray-500">— Not Uploaded</span>
@@ -55,30 +63,42 @@
 
       <div class="space-y-6 text-left">
         <div>
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Academic Information</h3>
+          <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Academic Information</h3>
           <div class="space-y-2.5 text-xs text-gray-700">
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Register No:</span> <span class="text-gray-900 font-medium">{{ student.registerNumber }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Batch Code:</span> <span class="text-gray-900 font-medium">{{ student.batchCode || student.batch || '—' }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Course / Spec:</span> <span class="text-gray-900 font-medium">{{ student.course }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">CGPA:</span> <span class="text-gray-900 font-medium">{{ student.cgpa }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">Backlogs:</span> <span class="text-gray-900 font-medium">{{ student.backlogs }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">10th Std %:</span> <span class="text-gray-900 font-medium">{{ student.tenthPercentage ? student.tenthPercentage + '%' : '—' }}</span></div>
-            <div><span class="font-semibold text-gray-400 inline-block w-28">12th Std %:</span> <span class="text-gray-900 font-medium">{{ student.twelfthPercentage ? student.twelfthPercentage + '%' : '—' }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Register No:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.registerNumber }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Batch Code:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.batchCode || student.batch || '—' }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Course / Spec:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.course }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">CGPA:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.cgpa }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">Backlogs:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.backlogs }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">10th Std %:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.tenthPercentage ? student.tenthPercentage + '%' : '—'
+                }}</span></div>
+            <div><span class="font-semibold text-gray-900 inline-block w-28">12th Std %:</span> <span
+                class="text-gray-700 font-semibold"> {{ student.twelfthPercentage ? student.twelfthPercentage + '%' :
+                '—'
+                }}</span></div>
           </div>
         </div>
 
         <div class="border-t border-gray-100 pt-4">
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Placement Eligibility</h3>
+          <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Placement Eligibility</h3>
           <div class="space-y-3.5 text-xs text-gray-700">
             <div class="flex items-center">
-              <span class="font-semibold text-gray-400 inline-block w-36">Eligibility Status:</span> 
-              <span [class]="'badge text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ' + (student.optInStatus === 'opted_in' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (student.optInStatus === 'opted_out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-amber-50 text-amber-700 border border-amber-200'))">
+              <span class="font-semibold text-gray-900 inline-block w-36">Eligibility Status:</span>
+              <span
+                [class]="'badge text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ' + (student.optInStatus === 'opted_in' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (student.optInStatus === 'opted_out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-amber-50 text-amber-700 border border-amber-200'))">
                 {{ student.optInStatus | uppercase }}
               </span>
             </div>
             <div class="flex items-center">
-              <span class="font-semibold text-gray-400 inline-block w-36">Freeze Status:</span> 
-              <span [class]="'badge text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ' + (student.freezeStatus === 'frozen' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')">
+              <span class="font-semibold text-gray-900 inline-block w-36">Freeze Status:</span>
+              <span
+                [class]="'badge text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ' + (student.freezeStatus === 'frozen' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')">
                 {{ student.freezeStatus | uppercase }}
               </span>
             </div>
@@ -101,9 +121,7 @@
       <h1 style="font-family:'DM Sans',sans-serif; font-size:18px; font-weight:700; color:#000;">Students</h1>
     </div>
     <div class="flex items-center gap-2">
-      <button 
-        [disabled]="selectedIds.size === 0"
-        (click)="openBulkUpdate()"
+      <button [disabled]="selectedIds.size === 0" (click)="openBulkUpdate()"
         class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
         Bulk Action ({{ selectedIds.size }})
       </button>
@@ -115,11 +133,7 @@
     <!-- Toolbar -->
     <div class="p-4 border-b border-gray-100 flex items-center justify-between gap-4">
       <div class="relative flex-1">
-        <input 
-          type="text" 
-          [(ngModel)]="searchQuery" 
-          (input)="filter()"
-          placeholder="Search by name or register number…"
+        <input type="text" [(ngModel)]="searchQuery" (input)="filter()" placeholder="Search by name or register number…"
           class="w-full h-[36px] border border-gray-200 rounded-lg pl-10 pr-4 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
       </div>
     </div>
@@ -142,7 +156,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let s of getPaginatedStudents()" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+          <tr *ngFor="let s of getPaginatedStudents()"
+            class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
             <td class="p-3 pl-4">
               <input type="checkbox" [checked]="selectedIds.has(s.id)" (change)="toggleSelect(s.id)" />
             </td>
@@ -159,29 +174,43 @@
             <td class="p-3">
               <div class="flex items-center gap-2">
                 <!-- Eye Icon (View Profile) -->
-                <button (click)="viewProfile(s.id)" [routerLink]="['/kjusys/students', s.id]" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-blue-400 hover:text-blue-600 transition-colors" title="View Profile">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <button (click)="viewProfile(s.id)" [routerLink]="['/kjusys/students', s.id]"
+                  class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-blue-400 hover:text-blue-600 transition-colors"
+                  title="View Profile">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 </button>
 
                 <!-- Lock Icon (Freeze Status Toggle) -->
-                <button (click)="toggleFreeze(s.id)" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-emerald-500 hover:text-emerald-700 transition-colors" title="Toggle Freeze Status">
+                <button (click)="toggleFreeze(s.id)"
+                  class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-emerald-500 hover:text-emerald-700 transition-colors"
+                  title="Toggle Freeze Status">
                   <!-- Unlocked Lock (Active status) -->
-                  <svg *ngIf="s.freezeStatus === 'active'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                  <svg *ngIf="s.freezeStatus === 'active'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                   </svg>
                   <!-- Locked Lock (Frozen status) -->
-                  <svg *ngIf="s.freezeStatus === 'frozen'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg *ngIf="s.freezeStatus === 'frozen'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </button>
 
                 <!-- Ban Icon (Block/Opt-out Status Toggle) -->
-                <button (click)="toggleOptIn(s.id)" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-orange-500 hover:text-orange-700 transition-colors" title="Toggle Opt-In Status">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                <button (click)="toggleOptIn(s.id)"
+                  class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-orange-500 hover:text-orange-700 transition-colors"
+                  title="Toggle Opt-In Status">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                   </svg>
                 </button>
               </div>
@@ -194,22 +223,24 @@
     <!-- Pagination Footer -->
     <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white text-xs">
       <div class="text-gray-500 font-medium">
-        Showing {{ filteredStudents.length === 0 ? 0 : (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredStudents.length) }} of {{ filteredStudents.length }} entries
+        Showing {{ filteredStudents.length === 0 ? 0 : (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage *
+        pageSize, filteredStudents.length) }} of {{ filteredStudents.length }} entries
       </div>
       <div class="flex items-center gap-1.5" *ngIf="totalPages > 1">
-        <button [disabled]="currentPage === 1" (click)="prevPage()" class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+        <button [disabled]="currentPage === 1" (click)="prevPage()"
+          class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        
-        <button *ngFor="let page of getPagesArray()" 
-          (click)="setPage(page)"
+
+        <button *ngFor="let page of getPagesArray()" (click)="setPage(page)"
           [class]="page === currentPage ? 'w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center' : 'w-8 h-8 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center font-semibold'">
           {{ page }}
         </button>
 
-        <button [disabled]="currentPage === totalPages" (click)="nextPage()" class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+        <button [disabled]="currentPage === totalPages" (click)="nextPage()"
+          class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polyline points="9 18 15 12 9 6" />
           </svg>
@@ -221,26 +252,31 @@
 </div>
 
 <!-- MODAL: Bulk Action -->
-<div *ngIf="showBulkModal" class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
-  <div class="bg-white rounded-2xl shadow-xl w-full mx-4 overflow-hidden border border-gray-100" style="max-width:620px; max-height:92vh; display:flex; flex-direction:column;">
-    
+<div *ngIf="showBulkModal"
+  class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
+  <div class="bg-white rounded-2xl shadow-xl w-full mx-4 overflow-hidden border border-gray-100"
+    style="max-width:620px; max-height:92vh; display:flex; flex-direction:column;">
+
     <!-- Header -->
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
       <h2 class="text-sm font-semibold text-gray-900">Bulk Update Students</h2>
       <button (click)="closeBulkUpdate()" class="text-gray-400 hover:text-gray-600 transition-colors">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
     </div>
 
     <!-- Body content -->
     <div class="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-      
+
       <!-- Selected count banner -->
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2.5">
-        <svg width="18" height="18" fill="none" stroke="#2563EB" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+        <svg width="18" height="18" fill="none" stroke="#2563EB" stroke-width="2" viewBox="0 0 24 24"
+          class="flex-shrink-0">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
           <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
         <span class="text-xs text-blue-700 font-medium">
@@ -250,17 +286,23 @@
 
       <!-- Tab selector -->
       <div class="bg-gray-100 rounded-lg p-1" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));">
-        <button class="bulk-tab" [ngClass]="activeBulkTab === 'excel' ? 'active' : 'inactive'" (click)="switchBulkTab('excel')">
+        <button class="bulk-tab" [ngClass]="activeBulkTab === 'excel' ? 'active' : 'inactive'"
+          (click)="switchBulkTab('excel')">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M9 21V9" />
           </svg>
           Excel Import
         </button>
-        <button class="bulk-tab" [ngClass]="activeBulkTab === 'manual' ? 'active' : 'inactive'" (click)="switchBulkTab('manual')">
+        <button class="bulk-tab" [ngClass]="activeBulkTab === 'manual' ? 'active' : 'inactive'"
+          (click)="switchBulkTab('manual')">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" />
-            <line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
           </svg>
           Manual Status Update
         </button>
@@ -271,41 +313,44 @@
         <!-- Download template row -->
         <div class="template-row">
           <div class="template-row-text text-[11px] text-gray-500">
-            <strong class="text-gray-800 font-semibold">Download Template</strong> — pre-filled with current student data, ready to edit &amp; re-upload.
+            <strong class="text-gray-800 font-semibold">Download Template</strong> — pre-filled with current student
+            data, ready to edit &amp; re-upload.
           </div>
           <button (click)="downloadBulkTemplate()" class="btn-template">
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Download
           </button>
         </div>
 
         <!-- Drag & drop zone -->
-        <div id="bulk-dropzone" 
-          [class.dragover]="isDragOver" 
-          [class.file-selected]="isFileSelected"
-          (dragover)="$event.preventDefault(); isDragOver = true;"
-          (dragleave)="isDragOver = false"
-          (drop)="$event.preventDefault(); handleBulkFileDrop($event)"
-          (click)="fileInput.click()">
-          
-          <svg width="34" height="34" fill="none" stroke="#9CA3AF" stroke-width="1.5" viewBox="0 0 24 24" class="mx-auto mb-2 text-gray-400">
-            <polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" />
+        <div id="bulk-dropzone" [class.dragover]="isDragOver" [class.file-selected]="isFileSelected"
+          (dragover)="$event.preventDefault(); isDragOver = true;" (dragleave)="isDragOver = false"
+          (drop)="$event.preventDefault(); handleBulkFileDrop($event)" (click)="fileInput.click()">
+
+          <svg width="34" height="34" fill="none" stroke="#9CA3AF" stroke-width="1.5" viewBox="0 0 24 24"
+            class="mx-auto mb-2 text-gray-400">
+            <polyline points="16 16 12 12 8 16" />
+            <line x1="12" y1="12" x2="12" y2="21" />
             <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
           </svg>
-          
-          <p class="text-xs font-semibold text-gray-700 mb-0.5">Drag &amp; drop your file here, or <span class="text-blue-600 hover:underline">click to browse</span></p>
+
+          <p class="text-xs font-semibold text-gray-700 mb-0.5">Drag &amp; drop your file here, or <span
+              class="text-blue-600 hover:underline">click to browse</span></p>
           <p class="text-[11px] text-gray-400 mb-1">Supports .xlsx, .xls, .csv</p>
           <p *ngIf="bulkFilename" class="text-xs text-blue-600 font-bold mt-1">{{ bulkFilename }}</p>
-          
-          <input #fileInput type="file" accept=".xlsx,.xls,.csv" style="display:none;" (change)="handleBulkFileSelect($event)" />
+
+          <input #fileInput type="file" accept=".xlsx,.xls,.csv" style="display:none;"
+            (change)="handleBulkFileSelect($event)" />
         </div>
 
         <!-- Parsing Preview table -->
         <div *ngIf="showPreview" class="space-y-1.5">
-          <div class="preview-label text-[10px] font-bold text-gray-400 uppercase tracking-wider">Preview — {{ parsedBulkRows.length }} row(s) parsed</div>
+          <div class="preview-label text-[10px] font-bold text-gray-400 uppercase tracking-wider">Preview — {{
+            parsedBulkRows.length }} row(s) parsed</div>
           <div class="preview-scroll">
             <table class="preview-table">
               <thead>
@@ -324,25 +369,38 @@
                     <span *ngIf="r._match" class="status-match">✓ Match</span>
                     <span *ngIf="!r._match" class="status-notfound">✗ Not Found</span>
                   </td>
-                  <td style="font-family: 'DM Mono', monospace; font-size: 10px;" class="text-gray-500 font-medium">{{ r.reg }}</td>
+                  <td style="font-family: 'DM Mono', monospace; font-size: 10px;" class="text-gray-500 font-medium">{{
+                    r.reg }}</td>
                   <td>
                     <span *ngIf="r._match && r.name && r.name !== r._match.name" class="val-change">
-                      <span class="val-old">{{ r._match.name }}</span><span class="val-arrow">→</span><span class="val-new">{{ r.name }}</span>
+                      <span class="val-old">{{ r._match.name }}</span><span class="val-arrow">→</span><span
+                        class="val-new">{{ r.name }}</span>
                     </span>
-                    <span *ngIf="!r._match || !r.name || r.name === r._match.name" class="val-same text-gray-700">{{ r.name || '—' }}</span>
+                    <span *ngIf="!r._match || !r.name || r.name === r._match.name" class="val-same text-gray-700">{{
+                      r.name || '—' }}</span>
                   </td>
-                  <td class="text-gray-500 truncate" style="max-width:140px;" [title]="r._match ? r._match.course : r.course">{{ r._match ? r._match.course : (r.course || '—') }}</td>
-                  <td>
-                    <span *ngIf="r._match && r.updateOptIn && r.updateOptIn !== (r._match.optInStatus || '—')" class="val-change">
-                      <span class="val-old">{{ r._match.optInStatus || '—' }}</span><span class="val-arrow">→</span><span class="val-new">{{ r.updateOptIn }}</span>
-                    </span>
-                    <span *ngIf="!r._match || !r.updateOptIn || r.updateOptIn === (r._match.optInStatus || '—')" class="val-same text-gray-700">{{ r.updateOptIn || (r._match ? r._match.optInStatus : '—') }}</span>
+                  <td class="text-gray-500 truncate" style="max-width:140px;"
+                    [title]="r._match ? r._match.course : r.course">{{ r._match ? r._match.course : (r.course || '—') }}
                   </td>
                   <td>
-                    <span *ngIf="r._match && r.updateFreeze && r.updateFreeze !== (r._match.freezeStatus || '—')" class="val-change">
-                      <span class="val-old">{{ r._match.freezeStatus || '—' }}</span><span class="val-arrow">→</span><span class="val-new">{{ r.updateFreeze }}</span>
+                    <span *ngIf="r._match && r.updateOptIn && r.updateOptIn !== (r._match.optInStatus || '—')"
+                      class="val-change">
+                      <span class="val-old">{{ r._match.optInStatus || '—' }}</span><span
+                        class="val-arrow">→</span><span class="val-new">{{ r.updateOptIn }}</span>
                     </span>
-                    <span *ngIf="!r._match || !r.updateFreeze || r.updateFreeze === (r._match.freezeStatus || '—')" class="val-same text-gray-700">{{ r.updateFreeze || (r._match ? r._match.freezeStatus : '—') }}</span>
+                    <span *ngIf="!r._match || !r.updateOptIn || r.updateOptIn === (r._match.optInStatus || '—')"
+                      class="val-same text-gray-700">{{ r.updateOptIn || (r._match ? r._match.optInStatus : '—')
+                      }}</span>
+                  </td>
+                  <td>
+                    <span *ngIf="r._match && r.updateFreeze && r.updateFreeze !== (r._match.freezeStatus || '—')"
+                      class="val-change">
+                      <span class="val-old">{{ r._match.freezeStatus || '—' }}</span><span
+                        class="val-arrow">→</span><span class="val-new">{{ r.updateFreeze }}</span>
+                    </span>
+                    <span *ngIf="!r._match || !r.updateFreeze || r.updateFreeze === (r._match.freezeStatus || '—')"
+                      class="val-same text-gray-700">{{ r.updateFreeze || (r._match ? r._match.freezeStatus : '—')
+                      }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -354,8 +412,10 @@
       <!-- Manual Status Update Panel -->
       <div *ngIf="activeBulkTab === 'manual'" class="space-y-3.5 text-xs text-left">
         <div class="modal-field">
-          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Opt-In Status</label>
-          <select [(ngModel)]="bulkOptIn" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Opt-In
+            Status</label>
+          <select [(ngModel)]="bulkOptIn"
+            class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
             <option value="">— No Change —</option>
             <option value="opted_in">Opted In</option>
             <option value="opted_out">Opted Out</option>
@@ -363,8 +423,10 @@
           </select>
         </div>
         <div class="modal-field">
-          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Freeze Status</label>
-          <select [(ngModel)]="bulkFreeze" class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Freeze
+            Status</label>
+          <select [(ngModel)]="bulkFreeze"
+            class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
             <option value="">— No Change —</option>
             <option value="active">Active</option>
             <option value="frozen">Frozen</option>
@@ -375,27 +437,34 @@
       <!-- Progress bar -->
       <div *ngIf="bulkProgressShow" class="space-y-1">
         <div class="progress-wrap bg-gray-100 rounded-full h-1.5 overflow-hidden">
-          <div class="progress-fill bg-blue-600 h-full rounded-full transition-all duration-300" [style.width]="bulkProgressFill + '%'"></div>
+          <div class="progress-fill bg-blue-600 h-full rounded-full transition-all duration-300"
+            [style.width]="bulkProgressFill + '%'"></div>
         </div>
         <p class="progress-label text-[11px] text-gray-400">{{ bulkProgressLabel }}</p>
       </div>
 
       <!-- Warning banner -->
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5">
-        <svg width="18" height="18" fill="none" stroke="#D97706" stroke-width="2" viewBox="0 0 24 24" class="flex-shrink-0 mt-0.5">
+        <svg width="18" height="18" fill="none" stroke="#D97706" stroke-width="2" viewBox="0 0 24 24"
+          class="flex-shrink-0 mt-0.5">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-          <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
         <span class="text-xs text-amber-800 leading-normal text-left">
-          This operation runs as a single transactional batch. Any failure will trigger automatic rollback to preserve data integrity.
+          This operation runs as a single transactional batch. Any failure will trigger automatic rollback to preserve
+          data integrity.
         </span>
       </div>
 
       <!-- Footer Buttons -->
       <div class="modal-footer flex justify-end gap-2 pt-3 border-t border-gray-100 flex-shrink-0">
-        <button type="button" [disabled]="bulkBusy" (click)="closeBulkUpdate()" class="btn-outline px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 text-xs">Cancel</button>
-        <button type="button" [disabled]="bulkBusy" (click)="applyBulk()" class="btn-primary flex items-center justify-center gap-1.5 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 min-w-[150px] text-xs">
-          <span *ngIf="bulkBusy" class="spinner border-2 border-white/30 border-t-white rounded-full w-3.5 h-3.5 animate-spin"></span>
+        <button type="button" [disabled]="bulkBusy" (click)="closeBulkUpdate()"
+          class="btn-outline px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 text-xs">Cancel</button>
+        <button type="button" [disabled]="bulkBusy" (click)="applyBulk()"
+          class="btn-primary flex items-center justify-center gap-1.5 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 min-w-[150px] text-xs">
+          <span *ngIf="bulkBusy"
+            class="spinner border-2 border-white/30 border-t-white rounded-full w-3.5 h-3.5 animate-spin"></span>
           <span>{{ bulkApplyLabel }}</span>
         </button>
       </div>
