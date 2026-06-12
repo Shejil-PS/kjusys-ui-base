@@ -375,9 +375,12 @@ export class DashboardComponent implements OnInit {
     // Determine placed students based on their applications status
     const placedStudentsSet = new Set<string>();
     this.allApplications.forEach((app: any) => {
-      if (app.status === 'Selected' || app.status === 'SELECTED') {
+      const currentStatus = app.status || app.status_PlacementAppilcation_Text || '';
+      if (currentStatus === 'Selected' || currentStatus === 'SELECTED') {
         if (app.studentId) placedStudentsSet.add(String(app.studentId).toLowerCase().trim());
+        if (app.studentId_PlacementAppilcation_Text) placedStudentsSet.add(String(app.studentId_PlacementAppilcation_Text).toLowerCase().trim());
         if (app.rollNo) placedStudentsSet.add(String(app.rollNo).toLowerCase().trim());
+        if (app.rollNo_PlacementAppilcation_Text) placedStudentsSet.add(String(app.rollNo_PlacementAppilcation_Text).toLowerCase().trim());
         if (app.rollNo_PlacementStudent_Text) placedStudentsSet.add(String(app.rollNo_PlacementStudent_Text).toLowerCase().trim());
         if (app.studentRegisterNumber) placedStudentsSet.add(String(app.studentRegisterNumber).toLowerCase().trim());
       }
@@ -410,16 +413,18 @@ export class DashboardComponent implements OnInit {
 
     const recruiterCounts: { [companyName: string]: number } = {};
     this.allApplications.forEach((app: any) => {
-      if (app.status === 'SELECTED' || app.status === 'Selected') {
+      const currentStatus = app.status || app.status_PlacementAppilcation_Text || '';
+      if (currentStatus === 'SELECTED' || currentStatus === 'Selected') {
         const studentMatches = students.some(s => {
           const sId = String(s.id || s._id || '').toLowerCase().trim();
           const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
-          return sId === String(app.studentId || '').toLowerCase().trim() ||
-                 sRoll === String(app.rollNo || '').toLowerCase().trim();
+          return sId === String(app.studentId || app.studentId_PlacementAppilcation_Text || '').toLowerCase().trim() ||
+                 sRoll === String(app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim();
         });
         if (studentMatches) {
-          const matchingDrive = this.allDrives.find(d => d.id === app.driveId || d._id === app.driveId);
-          const company = app.companyName || matchingDrive?.companyName || 'Unknown Company';
+          const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
+          const matchingDrive = this.allDrives.find(d => d.id === driveId || d._id === driveId);
+          const company = app.companyName || app.companyName_PlacementAppilcation_Text || matchingDrive?.companyName || matchingDrive?.companyName_PlacementDrive_Text || 'Unknown Company';
           recruiterCounts[company] = (recruiterCounts[company] || 0) + 1;
         }
       }
@@ -514,20 +519,24 @@ export class DashboardComponent implements OnInit {
     const monthlyHires = Array(12).fill(0);
 
     this.allApplications.forEach((app: any) => {
-      if (app.status === 'SELECTED' || app.status === 'Selected') {
+      const currentStatus = app.status || app.status_PlacementAppilcation_Text || '';
+      if (currentStatus === 'SELECTED' || currentStatus === 'Selected') {
         const studentMatches = students.some(s => {
           const sId = String(s.id || s._id || '').toLowerCase().trim();
           const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
-          return sId === String(app.studentId || '').toLowerCase().trim() ||
-                 sRoll === String(app.rollNo || '').toLowerCase().trim();
+          return sId === String(app.studentId || app.studentId_PlacementAppilcation_Text || '').toLowerCase().trim() ||
+                 sRoll === String(app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim();
         });
-        if (studentMatches && app.appliedDate) {
-          const d = new Date(app.appliedDate);
-          if (!isNaN(d.getTime())) {
-            const m = d.getMonth(); // 0 to 11
-            const idx = m >= 6 ? m - 6 : m + 6; // Map Jul to 0, Jun to 11
-            if (idx >= 0 && idx < 12) {
-              monthlyHires[idx]++;
+        if (studentMatches) {
+          const appDate = app.appliedDate || app.appiliedDate_PlacementAppilcation_Date;
+          if (appDate) {
+            const d = new Date(appDate);
+            if (!isNaN(d.getTime())) {
+              const m = d.getMonth(); // 0 to 11
+              const idx = m >= 6 ? m - 6 : m + 6; // Map Jul to 0, Jun to 11
+              if (idx >= 0 && idx < 12) {
+                monthlyHires[idx]++;
+              }
             }
           }
         }
@@ -652,20 +661,21 @@ export class DashboardComponent implements OnInit {
           }
 
           const student = this.allStudents.find((s: any) =>
-            String(s.id) === String(app.studentId) ||
-            (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim()
+            String(s.id || s._id) === String(app.studentId || app.studentId_PlacementAppilcation_Text) ||
+            (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim()
           );
 
-          const name = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : app.studentName || '—';
-          const rollNo = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || '—') : (app.studentRegisterNumber || app.rollNo || '—');
+          const name = student ? `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() : app.studentName || app.studentName_PlacementAppilcation_Text || '—';
+          const rollNo = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || '—') : (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '—');
           const course = student ? (student.specialization || student.course || student.departmentName || student.specialization_PlacementStudent_Text || '—') : (app.course || '—');
 
+          const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
           const drive = this.allDrives.find((d: any) =>
-            String(d.id || d._id) === String(app.driveId || app.placementId)
+            String(d.id || d._id) === String(driveId)
           );
-          const company = app.companyName || drive?.companyName || drive?.companyName_PlacementDrive_Text || '—';
+          const company = app.companyName || app.companyName_PlacementAppilcation_Text || drive?.companyName || drive?.companyName_PlacementDrive_Text || '—';
 
-          csvRows.push(`"${name}","${rollNo}","${course}","${company}","${app.status || '—'}"`);
+          csvRows.push(`"${name}","${rollNo}","${course}","${company}","${appStatus || '—'}"`);
         });
 
       } else if (option === 'offers') {
@@ -748,8 +758,9 @@ export class DashboardComponent implements OnInit {
         const companyStats: { [name: string]: { applied: number; selected: number } } = {};
 
         this.allApplications.forEach((app: any) => {
-          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(app.driveId || app.placementId));
-          const company = app.companyName || drive?.companyName || drive?.companyName_PlacementDrive_Text || 'Unknown Company';
+          const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
+          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(driveId));
+          const company = app.companyName || app.companyName_PlacementAppilcation_Text || drive?.companyName || drive?.companyName_PlacementDrive_Text || 'Unknown Company';
           if (!companyStats[company]) companyStats[company] = { applied: 0, selected: 0 };
           
           companyStats[company].applied++;
@@ -771,25 +782,28 @@ export class DashboardComponent implements OnInit {
         const driveSelections: { [key: string]: { companyName: string, role: string, students: string[] } } = {};
 
         this.allApplications.forEach((app: any) => {
-          if ((app.status || '').toLowerCase() !== 'selected') return;
+          const appStatus = app.status || app.status_PlacementAppilcation_Text || '';
+          if (appStatus.toLowerCase() !== 'selected') return;
 
           const student = this.allStudents.find((s: any) =>
-            String(s.id) === String(app.studentId) ||
-            (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || '').toLowerCase().trim()
+            String(s.id || s._id) === String(app.studentId || app.studentId_PlacementAppilcation_Text) ||
+            (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim()
           );
 
-          const sName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : app.studentName || 'Unknown';
-          const sReg = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || 'Unknown') : (app.studentRegisterNumber || app.rollNo || 'Unknown');
+          const sName = student ? `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() : app.studentName || app.studentName_PlacementAppilcation_Text || 'Unknown';
+          const sReg = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || 'Unknown') : (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || 'Unknown');
           const studentString = `${sName} (${sReg})`;
 
-          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(app.driveId || app.placementId));
-          const companyName = app.companyName || drive?.companyName || drive?.companyName_PlacementDrive_Text || 'Unknown Company';
+          const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
+          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(driveId));
+          const companyName = app.companyName || app.companyName_PlacementAppilcation_Text || drive?.companyName || drive?.companyName_PlacementDrive_Text || 'Unknown Company';
           
           let role = app.role || drive?.role || '—';
           
           const jobsArray = drive?.jobs || drive?.jobs_PlacementDrive_DocumentArray;
-          if (app.jobId && jobsArray && Array.isArray(jobsArray)) {
-            const j = jobsArray.find((job: any) => job.jobId === app.jobId || job.jobId_PlacementDrive_Text === app.jobId);
+          const targetJobId = app.jobId || app.jobId_PlacementAppilcation_Text;
+          if (targetJobId && jobsArray && Array.isArray(jobsArray)) {
+            const j = jobsArray.find((job: any) => job.jobId === targetJobId || job.jobId_PlacementDrive_Text === targetJobId);
             if (j) role = j.role || j.role_PlacementDrive_Text || '—';
           }
 
@@ -824,34 +838,52 @@ export class DashboardComponent implements OnInit {
 
       csvRows.push(cols.map(c => `"${c}"`).join(','));
 
+      const localPlacedSet = new Set<string>();
+      this.allApplications.forEach((app: any) => {
+        const appStatus = app.status || app.status_PlacementAppilcation_Text || '';
+        if (appStatus === 'Selected' || appStatus === 'SELECTED') {
+          if (app.studentId) localPlacedSet.add(String(app.studentId).toLowerCase().trim());
+          if (app.studentId_PlacementAppilcation_Text) localPlacedSet.add(String(app.studentId_PlacementAppilcation_Text).toLowerCase().trim());
+          if (app.rollNo) localPlacedSet.add(String(app.rollNo).toLowerCase().trim());
+          if (app.rollNo_PlacementAppilcation_Text) localPlacedSet.add(String(app.rollNo_PlacementAppilcation_Text).toLowerCase().trim());
+          if (app.rollNo_PlacementStudent_Text) localPlacedSet.add(String(app.rollNo_PlacementStudent_Text).toLowerCase().trim());
+          if (app.studentRegisterNumber) localPlacedSet.add(String(app.studentRegisterNumber).toLowerCase().trim());
+        }
+      });
+
       this.allStudents.forEach((s: any) => {
         const rowData = colKeys.map(key => {
           if (key === 'name') {
-            return `"${s.firstName || ''} ${s.lastName || ''}"`;
+            return `"${s.firstName || s.firstName_PlacementStudent_Text || ''} ${s.lastName || s.lastName_PlacementStudent_Text || ''}"`;
           } else if (key === 'registerNumber') {
-            return `"${s.rollNo || s.registerNumber || ''}"`;
+            return `"${s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || ''}"`;
           } else if (key === 'course') {
-            return `"${s.specialization || s.course || s.departmentName || ''}"`;
+            return `"${s.specialization || s.course || s.departmentName || s.specialization_PlacementStudent_Text || s.departmentName_PlacementStudent_Text || ''}"`;
           } else if (key === 'cgpa') {
-            return `"${s.cgpa || ''}"`;
+            return `"${s.cgpa || s.cgpa_PlacementStudent_Double || ''}"`;
           } else if (key === 'placed') {
-            const isPlaced = s.isPlaced === true || s.status === 'Selected';
+            const sId = String(s.id || s._id || '').toLowerCase().trim();
+            const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
+            const isPlaced = s.isPlaced === true || s.status === 'Selected' || localPlacedSet.has(sId) || (!!sRoll && localPlacedSet.has(sRoll));
             return `"${isPlaced ? 'Placed' : 'Not Placed'}"`;
           }
-          return `"${s[key] || ''}"`;
+          return `"${s[key] || s[key + '_PlacementStudent_Text'] || s[key + '_PlacementStudent_Double'] || ''}"`;
         });
         csvRows.push(rowData.join(','));
       });
     }
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => encodeURIComponent(e)).join('%0A');
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', csvContent);
+    link.setAttribute('href', url);
     const filename = this.reportTemplateName ? `${this.reportTemplateName.replace(/\s+/g, '_')}.csv` : 'placement_report.csv';
     link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     this.reportsOpen = false;
   }

@@ -475,3 +475,56 @@ td {
 .table-row:hover {
   background-color: #f9fafb !important;
 }
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+  /* Force tables to not crunch and use the overflow-x-auto wrapper */
+  table {
+    min-width: 800px; /* Forces scroll on small screens */
+  }
+
+  /* Modals */
+  .max-w-lg, .max-w-md, [style*="max-width:620px"] {
+    max-width: 95% !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  /* Make grid forms stack */
+  form [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Make export panel full width */
+  .export-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  /* Stack candidates header actions */
+  .bg-white.rounded-xl.p-4.mb-4.flex.items-center.justify-between.flex-wrap {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .bg-white.rounded-xl.p-4.mb-4.flex.items-center.justify-between.flex-wrap > div:last-child {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .bg-white.rounded-xl.p-4.mb-4.flex.items-center.justify-between.flex-wrap > div:last-child button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Adjust bulk tabs */
+  .bg-gray-100.rounded-lg.p-1[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+}

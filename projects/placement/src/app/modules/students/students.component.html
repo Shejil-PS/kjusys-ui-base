@@ -1,8 +1,8 @@
 <!-- STUDENT PROFILE DETAILS VIEW -->
-<div class="px-6 pt-5 pb-36" *ngIf="selectedStudentId && student">
+<div class="px-6 pb-36" style="padding-top: 30px; box-sizing: border-box;" *ngIf="selectedStudentId && student">
   <div class="mb-4">
     <a (click)="clearProfile()" routerLink="/kjusys/students"
-      class="text-xs text-blue-600 hover:underline cursor-pointer">← Back to Students</a>
+      class="text-xs text-black hover:underline cursor-pointer">← Back to Students</a>
   </div>
 
   <div class="flex flex-col md:flex-row gap-6 max-w-5xl items-start mb-8">
@@ -111,14 +111,14 @@
 </div>
 
 <!-- STUDENTS LIST VIEW -->
-<div class="px-6 pt-5 pb-24" *ngIf="!selectedStudentId">
+<div class="px-6 pb-24" style="padding-top: 30px; box-sizing: border-box;" *ngIf="!selectedStudentId">
   <!-- Breadcrumb + Title + Button -->
-  <div class="flex items-end justify-between mb-5">
+  <div class="flex items-end justify-between" style="margin-bottom: 28px;">
     <div>
       <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#989898; margin-bottom:4px;">
         Placements / <span style="color:#111827; font-weight:700;">Students</span>
       </div>
-      <h1 style="font-family:'DM Sans',sans-serif; font-size:18px; font-weight:700; color:#000;">Students</h1>
+      <h1 style="font-family:'DM Sans',sans-serif; font-size:18px; font-weight:400; color:#000;">Students</h1>
     </div>
     <div class="flex items-center gap-2">
       <button [disabled]="selectedIds.size === 0" (click)="openBulkUpdate()"

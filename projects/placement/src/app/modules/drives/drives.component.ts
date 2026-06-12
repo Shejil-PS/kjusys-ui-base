@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
@@ -91,8 +92,15 @@ class PlacementApiService {
     return this.http.put<any>(`${environment.baseUrl}/placements-app/update-placements/${id}`, drive);
   }
   listCandidates(id: string): Observable<any[]> {
-    const param = id.startsWith('J') ? 'jobId' : 'placementId';
-    return this.http.get<any[]>(`${environment.baseUrl}/placements-app/list-applications?${param}=${id}`);
+    return this.http.get<any[]>(`${environment.baseUrl}/placements-app/list-applications`).pipe(
+      map(apps => {
+        const appsList = extractDataArray(apps);
+        return appsList.filter((a: any) => 
+          a.jobId === id || a.jobId_PlacementAppilcation_Text === id || 
+          a.placementId === id || a.placementId_PlacementAppilcation_Text === id
+        );
+      })
+    );
   }
   updateCandidateStatus(driveId: string, appId: string, status: string): Observable<any> {
     return this.http.patch<any>(`${environment.baseUrl}/placements-app/applications/${appId}/status`, { status });
@@ -166,6 +174,7 @@ export class DrivesComponent implements OnInit {
   selectedTemplate = 'template1';
   customTemplateName = '';
   showSaveCustomTemplate = false;
+  customTemplates: { id: string, name: string, fields: string[] }[] = [];
   exportFields = [
     { id: 'f_all', label: 'All Fields', checked: false, isAll: true },
     // Student Collection Fields
@@ -246,6 +255,12 @@ export class DrivesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const stored = localStorage.getItem('placementCustomTemplates');
+    if (stored) {
+      try {
+        this.customTemplates = JSON.parse(stored);
+      } catch (e) {}
+    }
     this.filteredDrives = [...this.drives];
     this.loadDrives();
   }
@@ -266,7 +281,7 @@ export class DrivesComponent implements OnInit {
             if (jobsArray && Array.isArray(jobsArray)) {
               jobsArray.forEach((j: any) => {
                 const actualJobId = j.jobId_PlacementDrive_Text || j.jobId;
-                const count = appsList.filter((a: any) => a.jobId === actualJobId).length;
+                const count = appsList.filter((a: any) => a.jobId === actualJobId || a.jobId_PlacementAppilcation_Text === actualJobId).length;
                 flatDrives.push({
                   id: actualJobId || p._id || p.id,
                   placementId: p._id || p.id,
@@ -283,7 +298,7 @@ export class DrivesComponent implements OnInit {
                 });
               });
             } else {
-              const count = appsList.filter((a: any) => a.placementId === p._id).length;
+              const count = appsList.filter((a: any) => a.placementId === p._id || a.placementId_PlacementAppilcation_Text === p._id).length;
               flatDrives.push({
                 id: p._id || p.id,
                 placementId: p._id || p.id,
@@ -347,19 +362,23 @@ export class DrivesComponent implements OnInit {
 
         if (candidatesList && candidatesList.length > 0) {
           this.candidates = candidatesList.map((c: any, i: number) => {
-            const studentReg = c.studentRegisterNumber || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || '';
-            const student = studentsList.find((s: any) => s.id === c.studentId ||
-              (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === studentReg.toLowerCase().trim());
+            const studentReg = c.studentRegisterNumber || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || c.rollNo_PlacementAppilcation_Text || '';
+            const cStudentId = c.studentId || c.studentId_PlacementAppilcation_Text || '';
+            const student = studentsList.find((s: any) => {
+              const matchesId = cStudentId && (String(s.id) === String(cStudentId) || String(s._id) === String(cStudentId));
+              const matchesReg = studentReg && (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === studentReg.toLowerCase().trim();
+              return matchesId || matchesReg;
+            });
 
             const fullName = (student?.firstName_PlacementStudent_Text && student?.lastName_PlacementStudent_Text) 
               ? `${student.firstName_PlacementStudent_Text} ${student.lastName_PlacementStudent_Text}` 
               : `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
 
             return {
-              id: c.applicationId || c._id || c.id,
-              name: c.studentName || c.studentName_PlacementDriveCandidate_Text || fullName || student?.name || '',
-              applied: c.appliedDate || c.appliedDate_PlacementDriveCandidate_Date || '02-05-2026',
-              reg: c.studentRegisterNumber || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || student?.rollNo || student?.registerNumber || student?.rollNo_PlacementStudent_Text || '22MCAA0' + (i + 1),
+              id: c._id || c.applicationId || c.id,
+              name: c.studentName || c.studentName_PlacementAppilcation_Text || c.studentName_PlacementDriveCandidate_Text || fullName || student?.name || '',
+              applied: c.appliedDate || c.appiliedDate_PlacementAppilcation_Date || c.appliedDate_PlacementDriveCandidate_Date || '02-05-2026',
+              reg: c.studentRegisterNumber || c.rollNo_PlacementAppilcation_Text || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || student?.rollNo || student?.registerNumber || student?.rollNo_PlacementStudent_Text || '22MCAA0' + (i + 1),
               course: student?.specialization || student?.course || student?.departmentName || student?.specialization_PlacementStudent_Text || student?.departmentName_PlacementStudent_Text || c.course || c.course_PlacementDriveCandidate_Text || 'Master of Computer Applications',
               agg: student ? `${Math.round((student.cgpa || student.cgpa_PlacementStudent_Double || 0) * 10)}%` : '85%',
               tenth: student?.tenthPercentage ? `${student.tenthPercentage}%` : '90%',
@@ -860,7 +879,12 @@ export class DrivesComponent implements OnInit {
       this.runProgress(() => {
         matched.forEach(r => {
           const c = r._match;
-          if (r.updateStatus) c.status = r.updateStatus;
+          if (r.updateStatus) {
+            c.status = r.updateStatus;
+            this.placementApi.updateCandidateStatus(this.activeDrive!.id, c.id, r.updateStatus).subscribe({
+              error: (err) => console.error("Failed to bulk update status for " + c.id, err)
+            });
+          }
           if (r.name) c.name = r.name;
           const idx = this.candidates.findIndex(orig => orig.id === c.id);
           if (idx !== -1) {
@@ -891,7 +915,12 @@ export class DrivesComponent implements OnInit {
       this.setBulkBusy(true);
       this.runProgress(() => {
         targetIdxs.forEach(i => {
-          if (statusVal) this.candidates[i].status = statusVal;
+          if (statusVal) {
+            this.candidates[i].status = statusVal;
+            this.placementApi.updateCandidateStatus(this.activeDrive!.id, this.candidates[i].id, statusVal).subscribe({
+              error: (err) => console.error("Failed to bulk update status for " + this.candidates[i].id, err)
+            });
+          }
           if (optinVal) this.candidates[i].optIn = optinVal;
           if (freezeVal) this.candidates[i].freeze = freezeVal;
           if (statusVal && (statusVal === 'Selected' || statusVal === 'SELECTED')) {
@@ -981,6 +1010,16 @@ export class DrivesComponent implements OnInit {
       });
       const allField = this.exportFields.find(f => f.isAll);
       if (allField) allField.checked = false;
+    } else if (val.startsWith('custom_')) {
+      const template = this.customTemplates.find(t => t.id === val);
+      if (template) {
+        const customChecked = new Set(template.fields);
+        this.exportFields.forEach(f => {
+          if (!f.isAll) f.checked = customChecked.has(f.id);
+        });
+        const allField = this.exportFields.find(f => f.isAll);
+        if (allField) allField.checked = false;
+      }
     }
   }
 
@@ -989,7 +1028,26 @@ export class DrivesComponent implements OnInit {
       alert('Please enter a template name.');
       return;
     }
-    alert(`Template "${this.customTemplateName}" saved!`);
+    const selectedFields = this.exportFields.filter(f => !f.isAll && f.checked).map(f => f.id);
+    if (selectedFields.length === 0) {
+      alert('Please select at least one field to save.');
+      return;
+    }
+
+    const newTemplate = {
+      id: 'custom_' + Date.now(),
+      name: this.customTemplateName.trim(),
+      fields: selectedFields
+    };
+
+    this.customTemplates.push(newTemplate);
+    localStorage.setItem('placementCustomTemplates', JSON.stringify(this.customTemplates));
+    
+    this.selectedTemplate = newTemplate.id;
+    this.showSaveCustomTemplate = false;
+    this.customTemplateName = '';
+    
+    this.showToast(`Template "${newTemplate.name}" saved!`);
   }
 
   exportToExcel(): void {

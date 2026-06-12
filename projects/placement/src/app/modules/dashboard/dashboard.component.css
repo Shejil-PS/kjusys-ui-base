@@ -395,4 +395,114 @@ app-card {
   background-color: #f0f9ff !important;
 }
 
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
 
+/* Laptop (1024px and below) */
+@media (max-width: 1024px) {
+  .dash-main-row {
+    flex-wrap: wrap !important;
+  }
+  .charts-row {
+    flex-wrap: wrap !important;
+  }
+  .stat-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+  .stat-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .dept-panel > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  .jd-modal {
+    width: 95% !important;
+    max-height: 95vh !important;
+  }
+  
+  .w-72.shrink-0 {
+    width: 100% !important;
+  }
+  
+  .school-metrics {
+    gap: 12px !important;
+  }
+
+  .charts-row {
+    flex-direction: column !important;
+  }
+  .charts-row > div {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Fix header */
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+  .dash-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .dash-header-actions select, .dash-header-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  .stat-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dept-panel > div {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .jd-modal {
+    width: 100% !important;
+    border-radius: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+  
+  .option-row input[type="text"], .option-row select {
+    width: 100% !important;
+  }
+  
+  .option-row {
+    flex-wrap: wrap;
+  }
+
+  .school-row button {
+    flex-wrap: wrap;
+  }
+  .school-metrics {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+  
+  .dash-header-actions {
+    flex-direction: column;
+  }
+  .dash-header-actions select, .dash-header-actions button {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* Ensure SVGs inside dash-header buttons don't scale up */
+.dash-header-actions button svg {
+  flex-shrink: 0;
+  max-width: 16px;
+  max-height: 16px;
+}
