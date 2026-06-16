@@ -22,7 +22,7 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input type="text" placeholder="Search by company or role..." class="input-search" [(ngModel)]="searchQuery"
-            (input)="filter()" />
+            (ngModelChange)="onSearchInput()" (keyup.enter)="onSearchInput()" />
         </div>
       </div>
 
@@ -45,7 +45,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let d of filteredDrives"
+            <tr *ngFor="let d of getPaginatedDrives()"
               class="table-row border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
               <td class="px-5 py-3.5">
                 <p class="td-primary text-sm font-semibold text-gray-800">{{ d.companyName }}</p>
@@ -90,6 +90,34 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white text-xs">
+        <div class="text-gray-500 font-medium">
+          Showing {{ filteredDrives.length === 0 ? 0 : (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage *
+          pageSize, filteredDrives.length) }} of {{ filteredDrives.length }} entries
+        </div>
+        <div class="flex items-center gap-1.5" *ngIf="totalPages > 1">
+          <button [disabled]="currentPage === 1" (click)="prevPage()"
+            class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          <button *ngFor="let page of getPagesArray()" (click)="setPage(page)"
+            [class]="page === currentPage ? 'w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center' : 'w-8 h-8 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center font-semibold'">
+            {{ page }}
+          </button>
+
+          <button [disabled]="currentPage === totalPages" (click)="nextPage()"
+            class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -162,7 +190,7 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input type="text" placeholder="Search applicants by name..." class="input-search"
-            [ngModel]="candidateSearchQuery" (ngModelChange)="filterCandidates($event || '')" />
+            [ngModel]="candidateSearchQuery" (ngModelChange)="filterCandidates($event || '')" (keyup.enter)="onCandidateSearchInput()" />
         </div>
       </div>
 
@@ -195,7 +223,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of getFilteredCandidates(); let i = index"
+            <tr *ngFor="let c of getPaginatedCandidates(); let i = index"
               class="table-row border-b border-gray-100 hover:bg-gray-50 transition-colors"
               [ngClass]="{'row-selected bg-blue-50/50': selectedCandidateIds.has(c.id)}">
               <td class="px-4 py-3.5">
@@ -244,6 +272,34 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white text-xs">
+        <div class="text-gray-500 font-medium">
+          Showing {{ getFilteredCandidates().length === 0 ? 0 : (candidateCurrentPage - 1) * candidatePageSize + 1 }} to {{ Math.min(candidateCurrentPage *
+          candidatePageSize, getFilteredCandidates().length) }} of {{ getFilteredCandidates().length }} entries
+        </div>
+        <div class="flex items-center gap-1.5" *ngIf="candidateTotalPages > 1">
+          <button [disabled]="candidateCurrentPage === 1" (click)="prevCandidatePage()"
+            class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          <button *ngFor="let page of getCandidatePagesArray()" (click)="setCandidatePage(page)"
+            [class]="page === candidateCurrentPage ? 'w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center' : 'w-8 h-8 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center font-semibold'">
+            {{ page }}
+          </button>
+
+          <button [disabled]="candidateCurrentPage === candidateTotalPages" (click)="nextCandidatePage()"
+            class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -561,26 +617,6 @@
             <option value="Rejected">Rejected</option>
             <option value="On Hold">On Hold</option>
             <option value="In Progress">In Progress</option>
-          </select>
-        </div>
-        <div class="modal-field">
-          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Opt-In
-            Status</label>
-          <select [(ngModel)]="bulkOptIn"
-            class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
-            <option value="">— No change —</option>
-            <option>Opted In</option>
-            <option>Opted Out</option>
-          </select>
-        </div>
-        <div class="modal-field">
-          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Update Freeze
-            Status</label>
-          <select [(ngModel)]="bulkFreeze"
-            class="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
-            <option value="">— No change —</option>
-            <option>Frozen</option>
-            <option>Active</option>
           </select>
         </div>
       </div>

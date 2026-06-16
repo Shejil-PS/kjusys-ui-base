@@ -43,7 +43,7 @@
     <!-- Search Bar -->
     <div class="p-4 border-b border-gray-100">
       <div class="relative max-w-full">
-        <input type="text" [(ngModel)]="searchQuery" (input)="filter()"
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchInput()" (keyup.enter)="onSearchInput()"
           class="w-full h-9 border border-gray-200 rounded-lg pl-10 pr-4 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
           placeholder="Search by name or industry…" aria-label="Search companies" />
       </div>
@@ -62,7 +62,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of filteredCompanies" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+          <tr *ngFor="let c of getPaginatedCompanies()" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
             <td class="p-3">
               <div class="flex items-center gap-3">
                 <div class="company-icon">
@@ -113,9 +113,32 @@
       </table>
     </div>
 
-    <!-- Row count -->
-    <div class="p-4 border-t border-gray-100 text-right text-xs text-gray-400">
-      Showing {{ filteredCompanies.length }} of {{ companies.length }} companies
+    <!-- Pagination Footer -->
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white text-xs">
+      <div class="text-gray-500 font-medium">
+        Showing {{ filteredCompanies.length === 0 ? 0 : (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage *
+        pageSize, filteredCompanies.length) }} of {{ filteredCompanies.length }} entries
+      </div>
+      <div class="flex items-center gap-1.5" *ngIf="totalPages > 1">
+        <button [disabled]="currentPage === 1" (click)="prevPage()"
+          class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
+        <button *ngFor="let page of getPagesArray()" (click)="setPage(page)"
+          [class]="page === currentPage ? 'w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center' : 'w-8 h-8 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center font-semibold'">
+          {{ page }}
+        </button>
+
+        <button [disabled]="currentPage === totalPages" (click)="nextPage()"
+          class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
   <div class="h-16"></div>

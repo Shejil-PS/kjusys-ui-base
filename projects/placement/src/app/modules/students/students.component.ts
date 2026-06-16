@@ -1,8 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
-import { Observable, forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, forkJoin, Subject } from 'rxjs';
+import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
@@ -26,10 +26,24 @@ export interface Student {
   resumeUrl?: string;
   course: string;
   optInStatus: 'opted_in' | 'opted_out' | 'pending';
-  freezeStatus: 'frozen' | 'active';
+  freezeStatus: 'active' | 'frozen';
   cgpa: number;
   backlogs: number;
+  attendance?: string;
   isPlaced?: boolean;
+  isFlagged?: boolean;
+  
+  // New profile fields
+  linkedin?: string;
+  github?: string;
+  projects?: string;
+  achievements?: string;
+  internshipDetails?: any[];
+  offerLetter?: any;
+  placedCompany?: string;
+  placedLocation?: string;
+  placedRole?: string;
+  placedPackage?: number;
 }
 
 // ── STUDENT API SERVICE ──
@@ -54,15 +68,32 @@ class StudentApiService {
       freezeStatus: data.freezeStatus || (data.freeze === true || data.freeze_PlacementStudent_Bool === true ? 'frozen' : 'active'),
       cgpa: data.cgpa || data.cgpa_PlacementStudent_Double || 0,
       backlogs: data.backlogs || data.backlogs_PlacementStudent_Int || 0,
-      isPlaced: data.isPlaced || false,
+      isPlaced: data.isPlaced === true || data.isPlaced === 'true' || data.isPlaced_PlacementStudent_Bool === true || data.isPlaced_PlacementStudent_Bool === 'true' || data.placedStatus_PlacementStudent_Bool === true || data.placedStatus_PlacementStudent_Bool === 'true' || data.status === 'Selected' || data.status_PlacementStudent_Text === 'Selected' || false,
+      isFlagged: data.flagged === true || data.flagged_PlacementStudent_Bool === true || false,
       gender: data.gender || data.gender_PlacementStudent_Text || '',
       dateOfBirth: data.dob || data.dateOfBirth || data.dob_PlacementStudent_Date || '',
       batchCode: data.batchCode || data.batch || data.batchCode_PlacementStudent_Text || '',
-      tenthPercentage: data.tenthPercentage || 0,
-      twelfthPercentage: data.twelfthPercentage || 0,
-      skills: data.skills || [],
-      resumeUrl: data.resumeUrl || '',
-      phone: data.phone ? String(data.phone) : ''
+      tenthPercentage: data.tenthPercentage || data.tenthPer_PlacementStudent_Double || 0,
+      twelfthPercentage: data.twelfthPercentage || data.twelthPer_PlacementStudent_Double || 0,
+      skills: data.skills || data.skills_PlacementStudent_Text || [],
+      resumeUrl: data.resumeUrl || (data.studentResume_PlacementStudent_Document ? data.studentResume_PlacementStudent_Document.resumeUrl : ''),
+      phone: data.phone ? String(data.phone) : (data.phone_PlacementStudent_Long ? String(data.phone_PlacementStudent_Long) : ''),
+      linkedin: data.linkedin || data.linkedin_PlacementStudent_Text || '',
+      github: data.github || data.github_PlacementStudent_Text || '',
+      projects: data.projects || data.projects_PlacementStudent_Text || '',
+      achievements: data.achievements || data.studentAchievements_PlacementStudent_Text || '',
+      internshipDetails: (Array.isArray(data.internshipDetails_PlacementStudent_DocumentArray) ? data.internshipDetails_PlacementStudent_DocumentArray : (Array.isArray(data.internshipDetails) ? data.internshipDetails : [])).map((i: any) => ({
+        companyName: i.companyName_PlacementStudent_Text || i.companyName || '',
+        location: i.location_PlacementStudent_Text || i.location || '',
+        jobType: i.jobType_PlacementStudent_Text || i.jobType || 'Work from Office',
+        duration: i.duration_PlacementStudent_Text || i.duration || ''
+      })),
+      offerLetter: data.offerLetter || data.offerLetter_PlacementStudent_Document || null,
+      placedCompany: data.placedCompany || data.placedCompany_PlacementStudent_Text || '',
+      placedLocation: data.placedLocation || data.placedLocation_PlacementStudent_Text || '',
+      placedRole: data.placedRole || data.role_PlacementStudent_Text || '',
+      placedPackage: data.placedPackage || data.package_PlacementStudent_Int || null,
+      attendance: data.attendance || 'N/A'
     };
   }
 
@@ -110,9 +141,9 @@ class StudentApiService {
     }
     return backend;
   }
-
-  list(): Observable<Student[]> {
-    return this.http.get<any>(this.base).pipe(
+  list(search?: string): Observable<Student[]> {
+    const url = search ? `${this.base}?search=${encodeURIComponent(search)}` : this.base;
+    return this.http.get<any>(url).pipe(
       map(res => {
         const list = res && res.responseData?.data ? res.responseData.data : (Array.isArray(res) ? res : []);
         return list.map((s: any) => this.mapToStudent(s));
@@ -167,13 +198,25 @@ export class StudentsComponent implements OnInit {
   // Active view states
   selectedStudentId: string | null = null;
   student: Student | null = null;
+  applications: any[] = [];
 
   students: Student[] = [];
 
   filteredStudents: Student[] = [];
   searchQuery = '';
+  searchSubject = new Subject<string>();
   selectedIds = new Set<string>();
   showBulkModal = false;
+  placedStudentsSet = new Set<string>();
+  
+  showPlacementModal = false;
+  selectedPlacementStudent: Student | null = null;
+  placementForm = {
+    company: '',
+    location: '',
+    role: '',
+    package: null as number | null
+  };
 
   // Form options
   bulkOptIn = '';
@@ -192,7 +235,7 @@ export class StudentsComponent implements OnInit {
 
   // Pagination states
   currentPage = 1;
-  pageSize = 10;
+  pageSize = 6;
   Math = Math;
 
   getPaginatedStudents(): Student[] {
@@ -224,8 +267,26 @@ export class StudentsComponent implements OnInit {
 
   getPagesArray(): number[] {
     const total = this.totalPages;
+    const maxVisible = 3;
+
+    if (total <= maxVisible) {
+      const arr: number[] = [];
+      for (let i = 1; i <= total; i++) {
+        arr.push(i);
+      }
+      return arr;
+    }
+
+    let start = Math.max(this.currentPage - 1, 1);
+    let end = start + maxVisible - 1;
+
+    if (end > total) {
+      end = total;
+      start = Math.max(end - maxVisible + 1, 1);
+    }
+
     const arr: number[] = [];
-    for (let i = 1; i <= total; i++) {
+    for (let i = start; i <= end; i++) {
       arr.push(i);
     }
     return arr;
@@ -256,12 +317,62 @@ export class StudentsComponent implements OnInit {
       }
       this.cdr.detectChanges();
     });
+
+    // Setup search debounce
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.loadStudents(query);
+    });
+
+    // Load applications to determine placed students
+    this.http.get<any>(`${environment.baseUrl}/placements-app/list-applications`).subscribe(appRes => {
+      const applications = appRes && appRes.responseData?.data ? appRes.responseData.data : (Array.isArray(appRes) ? appRes : []);
+      const pSet = new Set<string>();
+      applications.forEach((app: any) => {
+        const status = app.status || app.status_PlacementAppilcation_Text;
+        if (status === 'Selected') {
+          if (app.studentId) pSet.add(String(app.studentId).toLowerCase().trim());
+          if (app.studentId_PlacementAppilcation_Text) pSet.add(String(app.studentId_PlacementAppilcation_Text).toLowerCase().trim());
+          if (app.rollNo) pSet.add(String(app.rollNo).toLowerCase().trim());
+          if (app.rollNo_PlacementAppilcation_Text) pSet.add(String(app.rollNo_PlacementAppilcation_Text).toLowerCase().trim());
+          if (app.rollNo_PlacementStudent_Text) pSet.add(String(app.rollNo_PlacementStudent_Text).toLowerCase().trim());
+          if (app.studentRegisterNumber) pSet.add(String(app.studentRegisterNumber).toLowerCase().trim());
+        }
+      });
+      this.placedStudentsSet = pSet;
+      
+      // Update currently loaded students if any
+      if (this.students.length > 0) {
+        this.students.forEach(s => {
+          const sId = String(s.id).toLowerCase().trim();
+          const sRoll = s.registerNumber ? String(s.registerNumber).toLowerCase().trim() : '';
+          if (this.placedStudentsSet.has(sId) || (sRoll && this.placedStudentsSet.has(sRoll))) {
+            s.isPlaced = true;
+          }
+        });
+        this.filter();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  loadStudents(): void {
-    this.studentApi.list().subscribe({
+  onSearchInput(): void {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  loadStudents(query?: string): void {
+    this.studentApi.list(query).subscribe({
       next: (res: Student[]) => {
         this.students = res || [];
+        this.students.forEach(s => {
+          const sId = String(s.id).toLowerCase().trim();
+          const sRoll = s.registerNumber ? String(s.registerNumber).toLowerCase().trim() : '';
+          if (this.placedStudentsSet.has(sId) || (sRoll && this.placedStudentsSet.has(sRoll))) {
+            s.isPlaced = true;
+          }
+        });
         this.filter();
         this.cdr.detectChanges();
       },
@@ -277,10 +388,64 @@ export class StudentsComponent implements OnInit {
     this.studentApi.getOne(id).subscribe({
       next: (data: Student) => {
         this.student = data;
+        
+        // Fetch campus drive applications and drives for this student
+        forkJoin({
+          apps: this.http.get<any>(`${environment.baseUrl}/placements-app/list-applications`),
+          drives: this.http.get<any>(`${environment.baseUrl}/placements-app/list-drives`)
+        }).subscribe({
+          next: ({ apps, drives }) => {
+            const allApps = apps && apps.responseData?.data ? apps.responseData.data : (Array.isArray(apps) ? apps : []);
+            const allDrives = drives && drives.responseData?.data ? drives.responseData.data : (Array.isArray(drives) ? drives : []);
+
+            this.applications = allApps.filter((app: any) => {
+              const status = app.status || app.status_PlacementAppilcation_Text || '';
+              if (status.toLowerCase() !== 'selected') return false;
+
+              return (app.studentId && String(app.studentId).toLowerCase() === id.toLowerCase()) || 
+                     (app.studentId_PlacementAppilcation_Text && String(app.studentId_PlacementAppilcation_Text).toLowerCase() === id.toLowerCase()) ||
+                     (app.rollNo && data.registerNumber && String(app.rollNo).toLowerCase() === String(data.registerNumber).toLowerCase()) ||
+                     (app.rollNo_PlacementAppilcation_Text && data.registerNumber && String(app.rollNo_PlacementAppilcation_Text).toLowerCase() === String(data.registerNumber).toLowerCase());
+            });
+
+            // Enhance applications with company and role info
+            this.applications.forEach((app: any) => {
+              const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
+              const matchingDrive = allDrives.find((d: any) => d.id === driveId || d._id === driveId);
+              
+              app.company = app.companyName || app.companyName_PlacementAppilcation_Text || matchingDrive?.companyName || matchingDrive?.companyName_PlacementDrive_Text || 'Unknown Company';
+              app.title = app.role || app.role_PlacementAppilcation_Text || matchingDrive?.role || 'Role';
+              app.ctc = app.ctc || app.packageLpa_PlacementAppilcation_Text || matchingDrive?.packageCTC || '';
+              app.location = app.location || app.location_PlacementAppilcation_Text || matchingDrive?.location || 'N/A';
+            });
+
+            // If not manually placed, fetch from drive application
+            if (!this.student?.placedCompany && this.applications.length > 0) {
+              const selectedApp = this.applications[0]; // All items in this.applications are already filtered by 'selected'
+              if (this.student) {
+                this.student.isPlaced = true;
+                this.student.placedCompany = selectedApp.company;
+                this.student.placedRole = selectedApp.title;
+                this.student.placedLocation = selectedApp.location;
+                // Extract number from CTC if it has 'LPA'
+                const packageVal = selectedApp.ctc ? parseInt(String(selectedApp.ctc)) : undefined;
+                this.student.placedPackage = isNaN(packageVal as any) ? undefined : packageVal;
+              }
+            }
+
+            this.cdr.detectChanges();
+          },
+          error: () => {
+             this.applications = [];
+             this.cdr.detectChanges();
+          }
+        });
+        
         this.cdr.detectChanges();
       },
       error: () => {
         this.student = null;
+        this.applications = [];
         this.cdr.detectChanges();
       }
     });
@@ -305,9 +470,18 @@ export class StudentsComponent implements OnInit {
       this.filteredStudents = [...this.students];
     } else {
       const q = this.searchQuery.toLowerCase();
-      this.filteredStudents = this.students.filter(s =>
-        s.name.toLowerCase().includes(q) || s.registerNumber.toLowerCase().includes(q)
-      );
+      this.filteredStudents = this.students.filter(s => {
+        const isPlacedStr = s.isPlaced ? 'placed' : 'unplaced';
+        return (
+          (s.name && s.name.toLowerCase().includes(q)) || 
+          (s.registerNumber && s.registerNumber.toLowerCase().includes(q)) ||
+          (s.course && s.course.toLowerCase().includes(q)) ||
+          (s.cgpa && s.cgpa.toString().toLowerCase().includes(q)) ||
+          (s.optInStatus && s.optInStatus.toLowerCase().replace('_', ' ').includes(q)) ||
+          (s.freezeStatus && s.freezeStatus.toLowerCase().includes(q)) ||
+          (isPlacedStr.includes(q))
+        );
+      });
     }
   }
 
@@ -335,6 +509,7 @@ export class StudentsComponent implements OnInit {
   toggleFreeze(id: string): void {
     const student = this.students.find(s => s.id === id);
     if (student) {
+      if (!confirm(`Are you sure you want to change the freeze status for ${student.name}?`)) return;
       const nextFreeze = student.freezeStatus === 'active' ? 'frozen' : 'active';
       this.studentApi.updateStatus(id, undefined, nextFreeze).subscribe({
         next: (updatedStudent) => {
@@ -352,19 +527,57 @@ export class StudentsComponent implements OnInit {
     }
   }
 
-  toggleOptIn(id: string): void {
+  changeOptInStatus(id: string, newStatus: string): void {
     const student = this.students.find(s => s.id === id);
     if (student) {
-      const nextOptVal = student.optInStatus === 'opted_in' ? 'opted_out' : 'opted_in';
-      this.studentApi.updateStatus(id, nextOptVal, undefined).subscribe({
+      if (!confirm(`Are you sure you want to update the opt-in status to ${newStatus} for ${student.name}?`)) return;
+      if (student.isFlagged) {
+        this.toastService.error('Cannot change opt-in status for a flagged student.');
+        student.optInStatus = 'opted_out'; // revert UI
+        return;
+      }
+      this.studentApi.updateStatus(id, newStatus, undefined).subscribe({
         next: (updatedStudent) => {
-          student.optInStatus = nextOptVal as any;
-          this.toastService.success(`Student opt-in status updated to ${nextOptVal}!`);
+          student.optInStatus = newStatus as any;
+          this.toastService.success(`Student opt-in status updated to ${newStatus}!`);
           this.cdr.detectChanges();
         },
         error: () => {
-          student.optInStatus = nextOptVal as any;
-          this.toastService.success(`Student opt-in status updated to ${nextOptVal} (offline simulation)!`);
+          student.optInStatus = newStatus as any;
+          this.toastService.success(`Student opt-in status updated to ${newStatus} (offline simulation)!`);
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  toggleFlag(id: string): void {
+    const student = this.students.find(s => s.id === id);
+    if (student) {
+      const current = student.isFlagged || false;
+      if (!confirm(`Are you sure you want to ${current ? 'unflag' : 'flag'} ${student.name} for malpractices?`)) return;
+      const payload: any = {
+        flagged: !current,
+        flagged_PlacementStudent_Bool: !current
+      };
+      
+      if (!current) {
+        // If getting flagged, force opt-out
+        payload.optedIn = false;
+        payload.optedIn_PlacementStudent_Bool = false;
+      }
+
+      this.http.put<any>(`${environment.baseUrl}/placements-app/update-student/${id}`, payload).subscribe({
+        next: () => {
+          student.isFlagged = !current;
+          if (!current) student.optInStatus = 'opted_out';
+          this.toastService.success(`Student ${!current ? 'flagged for malpractice' : 'unflagged'}!`);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          student.isFlagged = !current; // Fallback
+          if (!current) student.optInStatus = 'opted_out';
+          this.toastService.success(`Student ${!current ? 'flagged for malpractice' : 'unflagged'} (offline simulation)!`);
           this.cdr.detectChanges();
         }
       });
@@ -623,5 +836,54 @@ export class StudentsComponent implements OnInit {
   setBulkBusy(busy: boolean): void {
     this.bulkBusy = busy;
     this.bulkApplyLabel = busy ? 'Processing…' : 'Apply Bulk Update';
+  }
+
+  openPlacementModal(student: Student) {
+    this.selectedPlacementStudent = student;
+    this.placementForm = {
+      company: '',
+      location: '',
+      role: '',
+      package: null
+    };
+    this.showPlacementModal = true;
+  }
+
+  closePlacementModal() {
+    this.showPlacementModal = false;
+    this.selectedPlacementStudent = null;
+  }
+
+  submitManualPlacement(isPlaced: boolean) {
+    if (!this.selectedPlacementStudent) return;
+    
+    const payload: any = {
+      placedStatus_PlacementStudent_Bool: isPlaced
+    };
+
+    if (isPlaced) {
+      payload.placedCompany_PlacementStudent_Text = this.placementForm.company;
+      payload.placedLocation_PlacementStudent_Text = this.placementForm.location;
+      payload.role_PlacementStudent_Text = this.placementForm.role;
+      payload.package_PlacementStudent_Int = this.placementForm.package;
+      payload.freeze = true;
+      payload.freeze_PlacementStudent_Bool = true;
+    } else {
+      payload.placedCompany_PlacementStudent_Text = '';
+      payload.placedLocation_PlacementStudent_Text = '';
+      payload.role_PlacementStudent_Text = '';
+      payload.package_PlacementStudent_Int = null;
+    }
+
+    this.http.put<any>(`${environment.baseUrl}/placements-app/update-student/${this.selectedPlacementStudent.id}`, payload).subscribe({
+      next: () => {
+        this.toastService.success('Placement status updated successfully');
+        this.closePlacementModal();
+        this.loadStudents();
+      },
+      error: () => {
+        this.toastService.error('Failed to update placement status');
+      }
+    });
   }
 }

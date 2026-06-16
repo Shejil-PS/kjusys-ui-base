@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, Subject } from 'rxjs';
+import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
@@ -69,6 +69,8 @@ export interface CandidateView {
   presentAddress?: string;
   resumeUrl?: string;
   skills?: string[];
+  internshipStatus?: string;
+  applicationData?: any;
   rawStudent?: any;
 }
 
@@ -82,8 +84,9 @@ class StudentApiService {
 
 class PlacementApiService {
   constructor(private http: HttpClient) { }
-  listDrives(): Observable<any[]> {
-    return this.http.get<any[]>(environment.baseUrl + '/placements-app/placements');
+  listDrives(search?: string): Observable<any[]> {
+    const url = search ? `${environment.baseUrl}/placements-app/placements?search=${encodeURIComponent(search)}` : environment.baseUrl + '/placements-app/placements';
+    return this.http.get<any[]>(url);
   }
   createDrive(drive: any): Observable<any> {
     return this.http.post<any>(environment.baseUrl + '/placements-app/create-placements', drive);
@@ -91,8 +94,9 @@ class PlacementApiService {
   updateDrive(id: string, drive: any): Observable<any> {
     return this.http.put<any>(`${environment.baseUrl}/placements-app/update-placements/${id}`, drive);
   }
-  listCandidates(id: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.baseUrl}/placements-app/list-applications`).pipe(
+  listCandidates(id: string, search?: string): Observable<any[]> {
+    const url = search ? `${environment.baseUrl}/placements-app/list-applications?search=${encodeURIComponent(search)}` : `${environment.baseUrl}/placements-app/list-applications`;
+    return this.http.get<any[]>(url).pipe(
       map(apps => {
         const appsList = extractDataArray(apps);
         return appsList.filter((a: any) => 
@@ -123,6 +127,8 @@ export class DrivesComponent implements OnInit {
   filteredDrives: PlacementDrive[] = [];
   searchQuery = '';
   candidateSearchQuery = '';
+  searchSubject = new Subject<string>();
+  candidateSearchSubject = new Subject<string>();
 
   // Page toggle: 'list' or 'candidates'
   currentSubpage: 'list' | 'candidates' = 'list';
@@ -190,6 +196,9 @@ export class DrivesComponent implements OnInit {
     { id: 'batchCode', label: 'Batch Code', checked: false },
     { id: 'backlogs', label: 'Backlogs', checked: false },
     { id: 'cgpa', label: 'CGPA', checked: false },
+    { id: 'tenthPercentage', label: 'Tenth Percentage', checked: false },
+    { id: 'twelfthPercentage', label: 'Twelfth Percentage', checked: false },
+    { id: 'internshipStatus', label: 'Internship Status', checked: false },
     { id: 'optIn', label: 'Opt-In Status', checked: false },
     { id: 'freeze', label: 'Freeze Status', checked: false },
     // Placement Collection Fields
@@ -209,6 +218,123 @@ export class DrivesComponent implements OnInit {
   emailTemplate = '';
   emailSubject = '';
   emailMessage = '';
+
+  // Pagination states
+  currentPage = 1;
+  pageSize = 5;
+  Math = Math;
+
+  getPaginatedDrives(): PlacementDrive[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    return this.filteredDrives.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredDrives.length / this.pageSize) || 1;
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  setPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  getPagesArray(): number[] {
+    const total = this.totalPages;
+    const maxVisible = 3;
+
+    if (total <= maxVisible) {
+      const arr: number[] = [];
+      for (let i = 1; i <= total; i++) {
+        arr.push(i);
+      }
+      return arr;
+    }
+
+    let start = Math.max(this.currentPage - 1, 1);
+    let end = start + maxVisible - 1;
+
+    if (end > total) {
+      end = total;
+      start = Math.max(end - maxVisible + 1, 1);
+    }
+
+    const arr: number[] = [];
+    for (let i = start; i <= end; i++) {
+      arr.push(i);
+    }
+    return arr;
+  }
+
+  // Candidate Pagination states
+  candidateCurrentPage = 1;
+  candidatePageSize = 10;
+
+  getPaginatedCandidates(): CandidateView[] {
+    const startIndex = (this.candidateCurrentPage - 1) * this.candidatePageSize;
+    return this.getFilteredCandidates().slice(startIndex, startIndex + this.candidatePageSize);
+  }
+
+  get candidateTotalPages(): number {
+    return Math.ceil(this.getFilteredCandidates().length / this.candidatePageSize) || 1;
+  }
+
+  nextCandidatePage(): void {
+    if (this.candidateCurrentPage < this.candidateTotalPages) {
+      this.candidateCurrentPage++;
+    }
+  }
+
+  prevCandidatePage(): void {
+    if (this.candidateCurrentPage > 1) {
+      this.candidateCurrentPage--;
+    }
+  }
+
+  setCandidatePage(page: number): void {
+    if (page >= 1 && page <= this.candidateTotalPages) {
+      this.candidateCurrentPage = page;
+    }
+  }
+
+  getCandidatePagesArray(): number[] {
+    const total = this.candidateTotalPages;
+    const maxVisible = 3;
+
+    if (total <= maxVisible) {
+      const arr: number[] = [];
+      for (let i = 1; i <= total; i++) {
+        arr.push(i);
+      }
+      return arr;
+    }
+
+    let start = Math.max(this.candidateCurrentPage - 1, 1);
+    let end = start + maxVisible - 1;
+
+    if (end > total) {
+      end = total;
+      start = Math.max(end - maxVisible + 1, 1);
+    }
+
+    const arr: number[] = [];
+    for (let i = start; i <= end; i++) {
+      arr.push(i);
+    }
+    return arr;
+  }
 
   // Toast notifications state
   toasts: { id: number; message: string; type?: string; show: boolean }[] = [];
@@ -263,11 +389,36 @@ export class DrivesComponent implements OnInit {
     }
     this.filteredDrives = [...this.drives];
     this.loadDrives();
+
+    // Setup search debounces
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.loadDrives(query);
+    });
+
+    this.candidateSearchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      if (this.activeDrive) {
+        this.loadCandidatesList(this.activeDrive.id, query);
+      }
+    });
   }
 
-  loadDrives(): void {
+  onSearchInput(): void {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  onCandidateSearchInput(): void {
+    this.candidateSearchSubject.next(this.candidateSearchQuery);
+  }
+
+  loadDrives(query?: string): void {
     forkJoin({
-      drives: this.placementApi.listDrives(),
+      drives: this.placementApi.listDrives(query),
       apps: this.http.get<any[]>(environment.baseUrl + '/placements-app/list-applications')
     }).subscribe({
       next: ({ drives, apps }) => {
@@ -315,6 +466,14 @@ export class DrivesComponent implements OnInit {
               });
             }
           });
+
+          // Sort descending (last created on first) using placementId (MongoDB _id is chronologically sortable)
+          flatDrives.sort((a, b) => {
+            const idA = a.placementId || '';
+            const idB = b.placementId || '';
+            return idB.localeCompare(idA);
+          });
+
           this.drives = flatDrives;
           this.filter();
         }
@@ -328,7 +487,10 @@ export class DrivesComponent implements OnInit {
     });
   }
 
-  filter(): void {
+  filter(resetPage: boolean = true): void {
+    if (resetPage) {
+      this.currentPage = 1;
+    }
     if (!this.searchQuery) {
       this.filteredDrives = [...this.drives];
     } else {
@@ -351,9 +513,15 @@ export class DrivesComponent implements OnInit {
     this.currentSubpage = 'candidates';
     this.selectedCandidateIds.clear();
     this.candidates = [];
+    this.candidateCurrentPage = 1;
+    this.candidateSearchQuery = '';
 
+    this.loadCandidatesList(drive.id);
+  }
+
+  loadCandidatesList(driveId: string, query?: string): void {
     forkJoin({
-      candidates: this.placementApi.listCandidates(drive.id),
+      candidates: this.placementApi.listCandidates(driveId, query),
       students: this.studentApi.list()
     }).subscribe({
       next: ({ candidates, students }) => {
@@ -381,8 +549,8 @@ export class DrivesComponent implements OnInit {
               reg: c.studentRegisterNumber || c.rollNo_PlacementAppilcation_Text || c.studentRegisterNumber_PlacementDriveCandidate_Text || c.rollNo || student?.rollNo || student?.registerNumber || student?.rollNo_PlacementStudent_Text || '22MCAA0' + (i + 1),
               course: student?.specialization || student?.course || student?.departmentName || student?.specialization_PlacementStudent_Text || student?.departmentName_PlacementStudent_Text || c.course || c.course_PlacementDriveCandidate_Text || 'Master of Computer Applications',
               agg: student ? `${Math.round((student.cgpa || student.cgpa_PlacementStudent_Double || 0) * 10)}%` : '85%',
-              tenth: student?.tenthPercentage ? `${student.tenthPercentage}%` : '90%',
-              twelfth: student?.twelfthPercentage ? `${student.twelfthPercentage}%` : '89%',
+              tenth: student?.tenthPercentage ? `${student.tenthPercentage}%` : (student?.tenthPer_PlacementStudent_Double ? `${student.tenthPer_PlacementStudent_Double}%` : '—'),
+              twelfth: student?.twelfthPercentage ? `${student.twelfthPercentage}%` : (student?.twelthPer_PlacementStudent_Double ? `${student.twelthPer_PlacementStudent_Double}%` : '—'),
               backlogs: (student?.backlogs !== undefined || student?.backlogs_PlacementStudent_Int !== undefined) ? ((student.backlogs || student.backlogs_PlacementStudent_Int) === 0 ? '-' : String(student.backlogs || student.backlogs_PlacementStudent_Int)) : '-',
               status: c.status || c.applicationStatus || c.applicationStatus_PlacementDriveCandidate_Text || '—',
               optIn: (student?.optedIn === true || student?.optedIn_PlacementStudent_Bool === true || student?.optInStatus === 'opted_in') ? 'Opted In' : 'Pending',
@@ -397,6 +565,18 @@ export class DrivesComponent implements OnInit {
               presentAddress: c.presentAddress || c.presentAddress_PlacementDriveCandidate_Text || '—',
               resumeUrl: student?.resumeUrl || c.resumeUrl || c.resumeUrl_PlacementDriveCandidate_Text || '',
               skills: student?.skills || c.skills_PlacementDriveCandidate_TextArray || [],
+              internshipStatus: (() => {
+                const internships = Array.isArray(student?.internshipDetails_PlacementStudent_DocumentArray) ? student.internshipDetails_PlacementStudent_DocumentArray : (Array.isArray(student?.internshipDetails) ? student.internshipDetails : []);
+                if (internships.length > 0) {
+                  const companyName = internships[0].companyName_PlacementStudent_Text || internships[0].companyName || '';
+                  const duration = internships[0].duration_PlacementStudent_Text || internships[0].duration || '';
+                  if (companyName && duration) return `Yes (${companyName}, ${duration})`;
+                  if (companyName) return `Yes (${companyName})`;
+                  return 'Yes';
+                }
+                return 'No';
+              })(),
+              applicationData: c,
               rawStudent: student
             };
           });
@@ -415,6 +595,8 @@ export class DrivesComponent implements OnInit {
 
   filterCandidates(q: string): void {
     this.candidateSearchQuery = q;
+    this.candidateCurrentPage = 1;
+    this.onCandidateSearchInput();
   }
 
   getFilteredCandidates(): CandidateView[] {
@@ -1076,6 +1258,9 @@ export class DrivesComponent implements OnInit {
         else if (f.id === 'cgpa') row[f.label] = (s.cgpa !== undefined || s.cgpa_PlacementStudent_Double !== undefined) ? (s.cgpa || s.cgpa_PlacementStudent_Double) : (c.agg || '—');
         else if (f.id === 'optIn') row[f.label] = c.optIn || '—';
         else if (f.id === 'freeze') row[f.label] = c.freeze || '—';
+        else if (f.id === 'tenthPercentage') row[f.label] = c.tenth || '—';
+        else if (f.id === 'twelfthPercentage') row[f.label] = c.twelfth || '—';
+        else if (f.id === 'internshipStatus') row[f.label] = c.internshipStatus || '—';
         else if (f.id === 'companyName') row[f.label] = this.activeDrive?.companyName || '—';
         else if (f.id === 'role') row[f.label] = this.activeDrive?.role || '—';
         else if (f.id === 'employmentType') row[f.label] = this.activeDrive?.type || '—';
@@ -1086,6 +1271,24 @@ export class DrivesComponent implements OnInit {
         else if (f.id === 'appliedDate') row[f.label] = c.applied || '—';
         else row[f.label] = (c as any)[f.id] || '—';
       });
+
+      // Append dynamic additional questions asked by the company
+      const driveAny: any = this.activeDrive || {};
+      const driveQuestions = driveAny.additionalQuestions_PlacementDrive_DocumentArray || driveAny.additionalQuestions || driveAny.fields || [];
+      if (driveQuestions.length > 0) {
+        const app = (c as any).applicationData || {};
+        const answers = app.formAnswers_PlacementAppilcation_DocumentArray || app.formAnswers || [];
+        driveQuestions.forEach((q: any) => {
+           const label = q.label_PlacementDrive_Text || q.label || 'Question';
+           const fieldId = q.fieldId_PlacementDrive_Text || q.fieldId || q.id || '';
+           
+           if (label) {
+             const ansObj = answers.find((a: any) => a.fieldId_PlacementAppilcation_Text === fieldId || a.fieldId === fieldId || (a.fieldId && a.fieldId.includes(fieldId)));
+             row[label] = ansObj ? (ansObj.answer_PlacementAppilcation_Text || ansObj.answer || '—') : '—';
+           }
+        });
+      }
+
       return row;
     });
 

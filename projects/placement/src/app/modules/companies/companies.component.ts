@@ -1,8 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
 
@@ -71,8 +71,9 @@ export class CompanyApiService {
     return backend;
   }
 
-  list(): Observable<Company[]> {
-    return this.http.get<any>(API_ROUTES.companies.list).pipe(
+  list(search?: string): Observable<Company[]> {
+    const url = search ? `${API_ROUTES.companies.list}?search=${encodeURIComponent(search)}` : API_ROUTES.companies.list;
+    return this.http.get<any>(url).pipe(
       map(res => {
         const list = res && (res.responseData?.data || res.responseData || res.value) ? (res.responseData?.data || res.responseData || res.value) : (Array.isArray(res) ? res : []);
         return list.map((c: any) => this.mapToCompany(c));
@@ -134,6 +135,7 @@ export class CompaniesComponent implements OnInit {
 
   filteredCompanies: Company[] = [];
   searchQuery = '';
+  searchSubject = new Subject<string>();
   showModal = false;
   editingId: string | null = null;
 
@@ -144,6 +146,65 @@ export class CompaniesComponent implements OnInit {
   fEmail = '';
   fPhone = '';
   fLocation = '';
+
+  // Pagination states
+  currentPage = 1;
+  pageSize = 7;
+  Math = Math;
+
+  getPaginatedCompanies(): Company[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    return this.filteredCompanies.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredCompanies.length / this.pageSize) || 1;
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  setPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  getPagesArray(): number[] {
+    const total = this.totalPages;
+    const maxVisible = 3;
+
+    if (total <= maxVisible) {
+      const arr: number[] = [];
+      for (let i = 1; i <= total; i++) {
+        arr.push(i);
+      }
+      return arr;
+    }
+
+    let start = Math.max(this.currentPage - 1, 1);
+    let end = start + maxVisible - 1;
+
+    if (end > total) {
+      end = total;
+      start = Math.max(end - maxVisible + 1, 1);
+    }
+
+    const arr: number[] = [];
+    for (let i = start; i <= end; i++) {
+      arr.push(i);
+    }
+    return arr;
+  }
 
   constructor(
     private http: HttpClient,
@@ -170,10 +231,22 @@ export class CompaniesComponent implements OnInit {
       }
       this.cdr.detectChanges();
     });
+
+    // Setup search debounce
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.loadCompanies(query);
+    });
   }
 
-  loadCompanies(): void {
-    this.companyApi.list().subscribe({
+  onSearchInput(): void {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  loadCompanies(query?: string): void {
+    this.companyApi.list(query).subscribe({
       next: (res: Company[]) => {
         if (res && res.length > 0) {
           this.companies = res;
@@ -206,7 +279,10 @@ export class CompaniesComponent implements OnInit {
     });
   }
 
-  filter(): void {
+  filter(resetPage: boolean = true): void {
+    if (resetPage) {
+      this.currentPage = 1;
+    }
     if (!this.searchQuery) {
       this.filteredCompanies = [...this.companies];
     } else {

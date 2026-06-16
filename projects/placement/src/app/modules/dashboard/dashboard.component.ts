@@ -200,15 +200,19 @@ export class DashboardComponent implements OnInit {
     { key: 'rate', label: 'Placement Rate by Dept', checked: false, category: 'Placement' },
     { key: 'companies', label: 'Company Directory', checked: false, category: 'Companies' },
     { key: 'visits', label: 'Company Visits & Drives', checked: false, category: 'Companies' },
-    { key: 'placements', label: 'Placement Rate by Company', checked: false, category: 'Companies' },
-    { key: 'selections', label: 'Company Selections & Students', checked: false, category: 'Companies' }
+    { key: 'placements', label: 'Placement Rate by Company', checked: false, category: 'Companies' }
   ];
 
   customReportFields = [
+    { key: 'slNo', label: 'Serial No.', checked: false, category: 'Student Profile Fields' },
     { key: 'name', label: 'Name', checked: false, category: 'Student Profile Fields' },
     { key: 'registerNumber', label: 'Register', checked: false, category: 'Student Profile Fields' },
+    { key: 'department', label: 'Department', checked: false, category: 'Student Profile Fields' },
     { key: 'course', label: 'Course', checked: false, category: 'Student Profile Fields' },
-    { key: 'cgpa', label: 'CGPA', checked: false, category: 'Student Profile Fields' }
+    { key: 'cgpa', label: 'CGPA', checked: false, category: 'Student Profile Fields' },
+    { key: 'optInStatus', label: 'Opt-in Status', checked: false, category: 'Student Profile Fields' },
+    { key: 'totalApplications', label: 'Total Applications', checked: false, category: 'Student Profile Fields' },
+    { key: 'placementStatus', label: 'Placement Status', checked: false, category: 'Student Profile Fields' }
   ];
 
   // ── RECRUITMENT WIZARD STATE ──
@@ -218,11 +222,11 @@ export class DashboardComponent implements OnInit {
 
   COMPANY_MASTER: any[] = [];
   INDUSTRIES = ['Technology', 'Finance', 'Healthcare', 'Consulting', 'E-commerce', 'Manufacturing', 'Media', 'Education', 'Other'];
-  JOB_TYPES = ['Full-Time', 'Internship', 'Part-Time', 'Contract'];
+  JOB_TYPES = ['Full-Time', 'Internship', 'Apprenticeship'];
   BATCH_MASTER: any[] = [];
 
   companies: Array<{ id: number; masterId: string; name: string; industry: string }> = [];
-  jobs: { [key: number]: Array<{ role: string; type: string; desc: string; ctc: string; minAgg: number | null; backlogAllowed: boolean; _open: boolean }> } = {};
+  jobs: { [key: number]: Array<{ role: string; type: string; descType?: string; desc: string; ctc: string; minAgg: number | null; backlogAllowed: boolean; _open: boolean }> } = {};
   batchDates: {
     [key: string]: {
       batches: string[];
@@ -446,7 +450,7 @@ export class DashboardComponent implements OnInit {
 
     // Reset topRecruiters first in case there are none for the selected year
     if (sortedRecruiters.length > 0) {
-      this.topRecruiters = sortedRecruiters.map((r, i) => ({
+      this.topRecruiters = sortedRecruiters.slice(0, 4).map((r, i) => ({
         name: r.name,
         count: r.count,
         class: rankStyles[i] || 'bg-gray-100 text-gray-600'
@@ -559,17 +563,17 @@ export class DashboardComponent implements OnInit {
     const maxVal = Math.max(...trendsData.map(t => t.count), 1);
     const height = 120;
     const width = 460;
-    const paddingY = 20;
+    const paddingTop = 20;
 
     const points = trendsData.map((t, idx) => {
       const x = (idx * width) / (monthNames.length - 1);
-      const y = height - paddingY - (t.count / maxVal) * (height - 2 * paddingY);
+      const y = height - (t.count / maxVal) * (height - paddingTop);
       return { x, y, month: t.month, count: t.count };
     });
 
     this.chartPoints = points;
     this.chartLinePath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-    this.chartAreaPath = points.length ? `${this.chartLinePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z` : '';
+    this.chartAreaPath = points.length ? `${this.chartLinePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z` : '';
     
     this.chartYLabels = [
       maxVal,
@@ -649,8 +653,11 @@ export class DashboardComponent implements OnInit {
       const option = this.selectedStandardReport || 'placed';
       
       if (option === 'placed' || option === 'rejected') {
-        const headers = ['Student Name', 'Register No', 'Course', 'Company Applied', 'Status'];
+        const headers = ['Sl No.', 'Student Name', 'Register No', 'Gender', 'Course', 'Company Applied', 'Role', 'Package', 'Status'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        let serialNo = 1;
+        const processedStudentIds = new Set<string>();
 
         this.allApplications.forEach((app: any) => {
           const appStatus = (app.status || '—').toLowerCase();
@@ -665,18 +672,58 @@ export class DashboardComponent implements OnInit {
             (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim()
           );
 
-          const name = student ? `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() : app.studentName || app.studentName_PlacementAppilcation_Text || '—';
+          if (student && option === 'placed') {
+            processedStudentIds.add(String(student.id || student._id));
+          }
+
+          const name = student ? `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() || student.name : app.studentName || app.studentName_PlacementAppilcation_Text || '—';
           const rollNo = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || '—') : (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '—');
+          const gender = student ? (student.gender || student.gender_PlacementStudent_Text || '—') : '—';
           const course = student ? (student.specialization || student.course || student.departmentName || student.specialization_PlacementStudent_Text || '—') : (app.course || '—');
 
           const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
-          const drive = this.allDrives.find((d: any) =>
-            String(d.id || d._id) === String(driveId)
-          );
+          const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(driveId));
+          
           const company = app.companyName || app.companyName_PlacementAppilcation_Text || drive?.companyName || drive?.companyName_PlacementDrive_Text || '—';
+          
+          // Try to find role and package from application or drive
+          let role = app.role || app.role_PlacementAppilcation_Text || '—';
+          let pkg = app.package || app.package_PlacementAppilcation_Text || app.packageLPA || '—';
+          
+          if (role === '—' || pkg === '—') {
+             const jobsArray = drive?.jobs || drive?.jobs_PlacementDrive_DocumentArray;
+             if (jobsArray && jobsArray.length > 0) {
+                 if (role === '—') role = jobsArray[0].role || jobsArray[0].role_PlacementDrive_Text || '—';
+                 if (pkg === '—') pkg = jobsArray[0].packageLpa_PlacementDrive_Text ? jobsArray[0].packageLpa_PlacementDrive_Text + ' LPA' : (jobsArray[0].packageLPA ? jobsArray[0].packageLPA + ' LPA' : (jobsArray[0].packageCTC || '—'));
+             }
+          }
 
-          csvRows.push(`"${name}","${rollNo}","${course}","${company}","${appStatus || '—'}"`);
+          csvRows.push(`"${serialNo++}","${name}","${rollNo}","${gender}","${course}","${company}","${role}","${pkg}","${appStatus || '—'}"`);
         });
+
+        // Add manually placed students if 'placed' is selected
+        if (option === 'placed') {
+          this.allStudents.forEach((student: any) => {
+            const isManuallyPlaced = student.isPlaced === true || student.isPlaced === 'true' || student.isPlaced_PlacementStudent_Bool === true || student.placedStatus_PlacementStudent_Bool === true;
+            const studentId = String(student.id || student._id);
+            
+            if (isManuallyPlaced && !processedStudentIds.has(studentId)) {
+              const name = `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() || student.name || '—';
+              const rollNo = student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || '—';
+              const gender = student.gender || student.gender_PlacementStudent_Text || '—';
+              const course = student.specialization || student.course || student.departmentName || student.specialization_PlacementStudent_Text || '—';
+              
+              const company = student.placedCompany || student.placedCompany_PlacementStudent_Text || student.company_PlacementStudent_Text || '—';
+              const role = student.placedRole || student.role_PlacementStudent_Text || '—';
+              let pkg = student.placedPackage || student.package_PlacementStudent_Text || '—';
+              if (pkg !== '—' && !String(pkg).toUpperCase().includes('LPA')) {
+                  pkg += ' LPA';
+              }
+
+              csvRows.push(`"${serialNo++}","${name}","${rollNo}","${gender}","${course}","${company}","${role}","${pkg}","selected (manual)"`);
+            }
+          });
+        }
 
       } else if (option === 'offers') {
         const headers = ['Company Name', 'Job Role', 'Job Type', 'Package', 'Eligible Batches', 'Min CGPA', 'Open Date', 'Close Date'];
@@ -705,30 +752,89 @@ export class DashboardComponent implements OnInit {
         });
 
       } else if (option === 'rate') {
-        const headers = ['School', 'Department', 'Total Opted-In', 'Placed Students', 'Placement Rate'];
+        const headers = ['School', 'Department', 'Active Participation No.', 'Applied Students', 'Placed Students', 'Placement Rate', 'Highest Salary', 'Lowest Salary', 'Average Salary', 'Median Salary'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
 
-        this.schools.forEach((school: any) => {
-          if (school.depts && Array.isArray(school.depts)) {
-            school.depts.forEach((dept: any) => {
-              csvRows.push(`"${school.name}","${dept.name}","${dept.total}","${dept.placed}","${dept.rate}"`);
+        const deptMap: any = {};
+        
+        this.allStudents.forEach((s: any) => {
+          const school = (s.departmentName || s.departmentName_PlacementStudent_Text || s.department || 'General').trim();
+          const dept = (s.specialization || s.specialization_PlacementStudent_Text || s.course || 'General').trim();
+          const key = `${school}::${dept}`;
+
+          if (!deptMap[key]) {
+            deptMap[key] = { school, dept, activeCount: 0, appliedCount: 0, placedCount: 0, salaries: [] };
+          }
+
+          const sId = String(s.id || s._id).toLowerCase().trim();
+          const sRoll = String(s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
+          const apps = this.allApplications.filter((app: any) => 
+            String(app.studentId || app.studentId_PlacementAppilcation_Text || '').toLowerCase().trim() === sId ||
+            (sRoll && String(app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim() === sRoll)
+          );
+
+          if (apps.length > 5) deptMap[key].activeCount++;
+          if (apps.length >= 1) deptMap[key].appliedCount++;
+
+          const isPlaced = s.isPlaced === true || s.isPlaced === 'true' || s.isPlaced_PlacementStudent_Bool === true || s.placedStatus_PlacementStudent_Bool === true || apps.some((a: any) => (a.status || a.status_PlacementAppilcation_Text || '').toLowerCase() === 'selected');
+          
+          if (isPlaced) {
+            deptMap[key].placedCount++;
+            let maxPkg = 0;
+            const placedApps = apps.filter((a: any) => (a.status || a.status_PlacementAppilcation_Text || '').toLowerCase() === 'selected');
+            placedApps.forEach((a: any) => {
+               let pkgRaw = a.package || a.package_PlacementAppilcation_Text || a.packageLPA || null;
+               if (!pkgRaw) {
+                 const driveId = a.driveId || a.placementId || a.placementId_PlacementAppilcation_Text;
+                 const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(driveId));
+                 const jobsArray = drive?.jobs || drive?.jobs_PlacementDrive_DocumentArray;
+                 if (jobsArray && jobsArray.length > 0) {
+                   pkgRaw = jobsArray[0].packageLpa_PlacementDrive_Text || jobsArray[0].packageLPA || jobsArray[0].packageCTC || null;
+                 }
+               }
+               let p = parseFloat(String(pkgRaw || '0').replace(/[^\d.]/g, ''));
+               if (p > 0) deptMap[key].salaries.push(p);
             });
+            
+            if (placedApps.length === 0) {
+               let p = parseFloat(String(s.placedPackage || s.package_PlacementStudent_Text || '0').replace(/[^\d.]/g, ''));
+               if (p > 0) deptMap[key].salaries.push(p);
+            }
           }
         });
 
+        Object.values(deptMap).forEach((d: any) => {
+           const rate = d.appliedCount > 0 ? ((d.placedCount / d.appliedCount) * 100).toFixed(2) + '%' : '0%';
+           let high = 'N/A', low = 'N/A', avg = 'N/A', median = 'N/A';
+           if (d.salaries.length > 0) {
+              const sorted = d.salaries.sort((a: number, b: number) => a - b);
+              low = sorted[0].toFixed(2) + ' LPA';
+              high = sorted[sorted.length - 1].toFixed(2) + ' LPA';
+              avg = (sorted.reduce((a: number,b: number) => a+b, 0) / sorted.length).toFixed(2) + ' LPA';
+              const mid = Math.floor(sorted.length / 2);
+              median = (sorted.length % 2 === 0 ? ((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid]).toFixed(2) + ' LPA';
+           }
+           csvRows.push(`"${d.school}","${d.dept}","${d.activeCount}","${d.appliedCount}","${d.placedCount}","${rate}","${high}","${low}","${avg}","${median}"`);
+        });
+
       } else if (option === 'companies') {
-        const headers = ['Company ID/Code', 'Company Name', 'Industry'];
+        const headers = ['Company ID/Code', 'Company Name', 'Industry', 'Location', 'Contact Person', 'Phone', 'Email'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
 
         this.allCompanies.forEach((c: any) => {
-          const code = c.companyCode_PlacementCompany_Text || c.COMPANY_CODE || c._id || c.id || '—';
-          const name = c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name || '—';
-          const ind = c.INDUSTRY || c.industry_PlacementCompany_Text || c.industry || '—';
-          csvRows.push(`"${code}","${name}","${ind}"`);
+          const code = c.companyCode_PlacementCompany_Text || c.COMPANY_CODE || c._id || c.id || 'N/A';
+          const name = c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name || 'N/A';
+          const ind = c.INDUSTRY || c.industry_PlacementCompany_Text || c.industry || 'N/A';
+          const loc = c.companyAddress_PlacementCompany_Text || c.COMPANY_ADDRESS || c.location || c.address || 'N/A';
+          const person = c.contactPerson_PlacementCompany_Text || c.CONTACT_PERSON || c.contactPerson || 'N/A';
+          const phone = c.contactPersonPhone_PlacementCompany_Long || c.CONTACT_PERSON_PHONE || c.contactPhone || c.phone || 'N/A';
+          const email = c.contactPersonEmail_PlacementCompany_Text || c.CONTACT_PERSON_EMAIL || c.contactEmail || c.email || 'N/A';
+          
+          csvRows.push(`"${code}","${name}","${ind}","${loc}","${person}","${phone}","${email}"`);
         });
 
       } else if (option === 'visits') {
-        const headers = ['Company Name', 'Industry', 'Drive Role', 'Drive Type', 'Package', 'Open Date'];
+        const headers = ['Company Name', 'Industry', 'Drive Role', 'Drive Type', 'Package', 'Open Date', 'Close Date'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
 
         this.allDrives.forEach((d: any) => {
@@ -736,6 +842,7 @@ export class DashboardComponent implements OnInit {
           const comp = this.allCompanies.find(c => (c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name) === companyName);
           const ind = comp ? (comp.INDUSTRY || comp.industry_PlacementCompany_Text || comp.industry || '—') : '—';
           const openDate = d.driveStart_PlacementDrive_Date || d.driveStart || d.openDate;
+          const closeDate = d.driveEnd_PlacementDrive_Date || d.driveEnd || d.closeDate;
           
           const jobsArray = d.jobs || d.jobs_PlacementDrive_DocumentArray;
           if (jobsArray && Array.isArray(jobsArray)) {
@@ -744,10 +851,10 @@ export class DashboardComponent implements OnInit {
               const type = j.employmentType || j.employmentType_PlacementDrive_Text || j.type || '—';
               const pkg = j.packageLpa_PlacementDrive_Text ? j.packageLpa_PlacementDrive_Text + ' LPA' : (j.packageLPA ? j.packageLPA + ' LPA' : (j.packageCTC || '—'));
               
-              csvRows.push(`"${companyName}","${ind}","${role}","${type}","${pkg}","${this.formatDate(openDate)}"`);
+              csvRows.push(`"${companyName}","${ind}","${role}","${type}","${pkg}","${this.formatDate(openDate)}","${this.formatDate(closeDate)}"`);
             });
           } else {
-            csvRows.push(`"${companyName}","${ind}","${d.role || '—'}","${d.type || '—'}","${d.packageCTC || '—'}","${this.formatDate(openDate)}"`);
+            csvRows.push(`"${companyName}","${ind}","${d.role || '—'}","${d.type || '—'}","${d.packageCTC || '—'}","${this.formatDate(openDate)}","${this.formatDate(closeDate)}"`);
           }
         });
 
@@ -776,10 +883,11 @@ export class DashboardComponent implements OnInit {
         });
 
       } else if (option === 'selections') {
-        const headers = ['Company Name', 'Job Role', 'Number of Selections', 'Selected Students (Name - Register No)'];
+        const headers = ['Company Name', 'Job Role', 'Number of Selections', 'Selected Students (Name - Register No - Dept)'];
         csvRows.push(headers.map(h => `"${h}"`).join(','));
 
         const driveSelections: { [key: string]: { companyName: string, role: string, students: string[] } } = {};
+        const processedStudentIds = new Set<string>();
 
         this.allApplications.forEach((app: any) => {
           const appStatus = app.status || app.status_PlacementAppilcation_Text || '';
@@ -790,9 +898,15 @@ export class DashboardComponent implements OnInit {
             (s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim() === (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim()
           );
 
-          const sName = student ? `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() : app.studentName || app.studentName_PlacementAppilcation_Text || 'Unknown';
+          if (student) {
+            processedStudentIds.add(String(student.id || student._id));
+          }
+
+          const sName = student ? `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() || student.name : app.studentName || app.studentName_PlacementAppilcation_Text || 'Unknown';
           const sReg = student ? (student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || 'Unknown') : (app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || 'Unknown');
-          const studentString = `${sName} (${sReg})`;
+          const sDept = student ? (student.specialization || student.course || student.departmentName || student.specialization_PlacementStudent_Text || 'General') : 'General';
+          
+          const studentString = `${sName} (${sReg} - ${sDept})`;
 
           const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
           const drive = this.allDrives.find((d: any) => String(d.id || d._id) === String(driveId));
@@ -812,6 +926,29 @@ export class DashboardComponent implements OnInit {
             driveSelections[key] = { companyName, role, students: [] };
           }
           driveSelections[key].students.push(studentString);
+        });
+
+        // Add manually placed students
+        this.allStudents.forEach((student: any) => {
+          const isManuallyPlaced = student.isPlaced === true || student.isPlaced === 'true' || student.isPlaced_PlacementStudent_Bool === true || student.placedStatus_PlacementStudent_Bool === true;
+          const studentId = String(student.id || student._id);
+          
+          if (isManuallyPlaced && !processedStudentIds.has(studentId)) {
+            const sName = `${student.firstName || student.firstName_PlacementStudent_Text || ''} ${student.lastName || student.lastName_PlacementStudent_Text || ''}`.trim() || student.name || 'Unknown';
+            const sReg = student.rollNo || student.registerNumber || student.rollNo_PlacementStudent_Text || 'Unknown';
+            const sDept = student.specialization || student.course || student.departmentName || student.specialization_PlacementStudent_Text || 'General';
+            
+            const companyName = student.placedCompany || student.placedCompany_PlacementStudent_Text || student.company_PlacementStudent_Text || 'Unknown Company (Manual)';
+            const role = student.placedRole || student.role_PlacementStudent_Text || '—';
+            
+            const studentString = `${sName} (${sReg} - ${sDept})`;
+            
+            const key = companyName + '_' + role;
+            if (!driveSelections[key]) {
+              driveSelections[key] = { companyName, role, students: [] };
+            }
+            driveSelections[key].students.push(studentString);
+          }
         });
 
         Object.values(driveSelections).forEach(ds => {
@@ -851,25 +988,43 @@ export class DashboardComponent implements OnInit {
         }
       });
 
+      let customSlNo = 1;
       this.allStudents.forEach((s: any) => {
+        const sId = String(s.id || s._id || '').toLowerCase().trim();
+        const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
+
         const rowData = colKeys.map(key => {
-          if (key === 'name') {
-            return `"${s.firstName || s.firstName_PlacementStudent_Text || ''} ${s.lastName || s.lastName_PlacementStudent_Text || ''}"`;
+          if (key === 'slNo') {
+            return `"${customSlNo}"`; // we increment it at the end of the student loop
+          } else if (key === 'name') {
+            const name = `${s.firstName || s.firstName_PlacementStudent_Text || ''} ${s.lastName || s.lastName_PlacementStudent_Text || ''}`.trim() || s.name || '';
+            return `"${name}"`;
           } else if (key === 'registerNumber') {
             return `"${s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || ''}"`;
+          } else if (key === 'department') {
+            return `"${s.departmentName || s.departmentName_PlacementStudent_Text || s.department || '—'}"`;
           } else if (key === 'course') {
-            return `"${s.specialization || s.course || s.departmentName || s.specialization_PlacementStudent_Text || s.departmentName_PlacementStudent_Text || ''}"`;
+            return `"${s.specialization || s.course || s.departmentName || s.specialization_PlacementStudent_Text || '—'}"`;
           } else if (key === 'cgpa') {
             return `"${s.cgpa || s.cgpa_PlacementStudent_Double || ''}"`;
-          } else if (key === 'placed') {
-            const sId = String(s.id || s._id || '').toLowerCase().trim();
-            const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
-            const isPlaced = s.isPlaced === true || s.status === 'Selected' || localPlacedSet.has(sId) || (!!sRoll && localPlacedSet.has(sRoll));
-            return `"${isPlaced ? 'Placed' : 'Not Placed'}"`;
+          } else if (key === 'optInStatus') {
+            let status = s.optInStatus || (s.optedIn === true || s.optedIn_PlacementStudent_Bool === true ? 'opted_in' : (s.optedIn === false || s.optedIn_PlacementStudent_Bool === false ? 'opted_out' : 'pending'));
+            return `"${status}"`;
+          } else if (key === 'totalApplications') {
+            const appCount = this.allApplications.filter((app: any) => 
+               String(app.studentId || app.studentId_PlacementAppilcation_Text || '').toLowerCase().trim() === sId ||
+               (!!sRoll && String(app.studentRegisterNumber || app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim() === sRoll)
+            ).length;
+            return `"${appCount}"`;
+          } else if (key === 'placementStatus' || key === 'placed') {
+            const isManuallyPlaced = s.isPlaced === true || s.isPlaced === 'true' || s.isPlaced_PlacementStudent_Bool === true || s.placedStatus_PlacementStudent_Bool === true || s.status === 'Selected';
+            const isPlaced = isManuallyPlaced || localPlacedSet.has(sId) || (!!sRoll && localPlacedSet.has(sRoll));
+            return `"${isPlaced ? 'Placed' : 'Unplaced'}"`;
           }
           return `"${s[key] || s[key + '_PlacementStudent_Text'] || s[key + '_PlacementStudent_Double'] || ''}"`;
         });
         csvRows.push(rowData.join(','));
+        customSlNo++;
       });
     }
 
@@ -1045,6 +1200,7 @@ export class DashboardComponent implements OnInit {
     this.jobs[compId].push({
       role: '',
       type: 'Full-Time',
+      descType: 'text',
       desc: '',
       ctc: '',
       minAgg: null,
@@ -1055,6 +1211,15 @@ export class DashboardComponent implements OnInit {
 
   removeJob(compId: number, ji: number): void {
     this.jobs[compId].splice(ji, 1);
+  }
+
+  onJobDescFileChange(event: any, j: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      j.desc = file.name;
+    } else {
+      j.desc = '';
+    }
   }
 
   toggleJob(compId: number, ji: number): void {
