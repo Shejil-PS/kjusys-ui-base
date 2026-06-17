@@ -31,6 +31,8 @@ export interface PlacementDrive {
   closeDate?: string;
   minimumCgpa: number;
   eligibleCourses?: string[];
+  rawDrive?: any;
+  rawJob?: any;
 }
 
 export interface StudentApplication {
@@ -180,6 +182,7 @@ export class DrivesComponent implements OnInit {
   selectedTemplate = 'template1';
   customTemplateName = '';
   showSaveCustomTemplate = false;
+  includeQuestionsInExport = false;
   customTemplates: { id: string, name: string, fields: string[] }[] = [];
   exportFields = [
     { id: 'f_all', label: 'All Fields', checked: false, isAll: true },
@@ -445,7 +448,9 @@ export class DrivesComponent implements OnInit {
                   openDate: this.formatDate(p.driveStart_PlacementDrive_Date || p.driveStart || p.openDate),
                   closeDate: this.formatDate(p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate),
                   minimumCgpa: j.minCgpa_PlacementDrive_Double || j.minCGPA || j.minimumCgpa || 6.0,
-                  applicationsCount: count
+                  applicationsCount: count,
+                  rawDrive: p,
+                  rawJob: j
                 });
               });
             } else {
@@ -462,7 +467,9 @@ export class DrivesComponent implements OnInit {
                 openDate: this.formatDate(p.driveStart_PlacementDrive_Date || p.driveStart || p.openDate),
                 closeDate: this.formatDate(p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate),
                 minimumCgpa: p.minimumCgpa || 6.0,
-                applicationsCount: count
+                applicationsCount: count,
+                rawDrive: p,
+                rawJob: null
               });
             }
           });
@@ -552,7 +559,11 @@ export class DrivesComponent implements OnInit {
               tenth: student?.tenthPercentage ? `${student.tenthPercentage}%` : (student?.tenthPer_PlacementStudent_Double ? `${student.tenthPer_PlacementStudent_Double}%` : '—'),
               twelfth: student?.twelfthPercentage ? `${student.twelfthPercentage}%` : (student?.twelthPer_PlacementStudent_Double ? `${student.twelthPer_PlacementStudent_Double}%` : '—'),
               backlogs: (student?.backlogs !== undefined || student?.backlogs_PlacementStudent_Int !== undefined) ? ((student.backlogs || student.backlogs_PlacementStudent_Int) === 0 ? '-' : String(student.backlogs || student.backlogs_PlacementStudent_Int)) : '-',
-              status: c.status || c.applicationStatus || c.applicationStatus_PlacementDriveCandidate_Text || '—',
+              status: (() => {
+                let s = c.status || c.applicationStatus || c.applicationStatus_PlacementDriveCandidate_Text || '—';
+                if (s === 'Applied') return 'In Progress';
+                return s;
+              })(),
               optIn: (student?.optedIn === true || student?.optedIn_PlacementStudent_Bool === true || student?.optInStatus === 'opted_in') ? 'Opted In' : 'Pending',
               freeze: (student?.freeze === true || student?.freeze_PlacementStudent_Bool === true) ? 'Frozen' : 'Active',
               email: student?.personalEmail || student?.email || student?.personalEmail_PlacementStudent_Text || student?.email_PlacementStudent_Text || c.email || c.email_PlacementDriveCandidate_Text || '',
@@ -1273,20 +1284,27 @@ export class DrivesComponent implements OnInit {
       });
 
       // Append dynamic additional questions asked by the company
-      const driveAny: any = this.activeDrive || {};
-      const driveQuestions = driveAny.additionalQuestions_PlacementDrive_DocumentArray || driveAny.additionalQuestions || driveAny.fields || [];
-      if (driveQuestions.length > 0) {
-        const app = (c as any).applicationData || {};
-        const answers = app.formAnswers_PlacementAppilcation_DocumentArray || app.formAnswers || [];
-        driveQuestions.forEach((q: any) => {
-           const label = q.label_PlacementDrive_Text || q.label || 'Question';
-           const fieldId = q.fieldId_PlacementDrive_Text || q.fieldId || q.id || '';
-           
-           if (label) {
-             const ansObj = answers.find((a: any) => a.fieldId_PlacementAppilcation_Text === fieldId || a.fieldId === fieldId || (a.fieldId && a.fieldId.includes(fieldId)));
-             row[label] = ansObj ? (ansObj.answer_PlacementAppilcation_Text || ansObj.answer || '—') : '—';
-           }
-        });
+      if (this.includeQuestionsInExport) {
+        const driveAny: any = this.activeDrive || {};
+        const rawDrive = driveAny.rawDrive || {};
+        const rawJob = driveAny.rawJob || {};
+        
+        const rootFields = rawDrive.fields_PlacementDrive_DocumentArray || rawDrive.fields || rawDrive.additionalQuestions || [];
+        const driveQuestions = rawJob.fields_PlacementDrive_DocumentArray || rawJob.fields || rawJob.additionalQuestions || rootFields;
+
+        if (driveQuestions.length > 0) {
+          const app = (c as any).applicationData || {};
+          const answers = app.formAnswers_PlacementAppilcation_DocumentArray || app.formAnswers || [];
+          driveQuestions.forEach((q: any) => {
+             const label = q.label_PlacementDrive_Text || q.label || 'Question';
+             const fieldId = q.fieldId_PlacementDrive_Text || q.fieldId || q.id || '';
+             
+             if (label) {
+               const ansObj = answers.find((a: any) => a.fieldId_PlacementAppilcation_Text === fieldId || a.fieldId === fieldId || (a.fieldId && a.fieldId.includes(fieldId)));
+               row[label] = ansObj ? (ansObj.answer_PlacementAppilcation_Text || ansObj.answer || '—') : '—';
+             }
+          });
+        }
       }
 
       return row;

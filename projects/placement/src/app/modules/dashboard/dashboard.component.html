@@ -366,9 +366,16 @@
       <div>
         <div class="text-[9px] font-bold text-gray-400 tracking-wider uppercase border-b border-gray-100 pb-1 mb-2">
           Student Profile Fields</div>
+        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-gray-100 pb-3">
+          <label class="border border-blue-50 bg-blue-50/30 text-blue-800 rounded-lg p-2 flex items-center gap-2 text-xs font-semibold cursor-pointer col-span-2 hover:bg-blue-50/60 transition-colors">
+            <input type="checkbox" [(ngModel)]="allFieldsSelected" (ngModelChange)="toggleAllCustomFields()"
+              class="accent-blue-600" />
+            <span>Select All Fields</span>
+          </label>
+        </div>
         <div class="grid grid-cols-2 gap-2">
           <label *ngFor="let field of customReportFields"
-            class="border border-gray-100 rounded-lg p-2 flex items-center gap-2 text-xs bg-gray-50/50 hover:bg-blue-50/40 cursor-pointer">
+            class="border border-gray-100 rounded-lg p-2 flex items-center gap-2 text-xs bg-gray-50/50 hover:bg-blue-50/40 cursor-pointer transition-colors">
             <input type="checkbox" [(ngModel)]="field.checked" (ngModelChange)="updateFieldsCount()"
               class="accent-blue-600" />
             <span>{{ field.label }}</span>

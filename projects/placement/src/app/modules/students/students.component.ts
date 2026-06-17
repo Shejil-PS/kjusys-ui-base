@@ -32,7 +32,7 @@ export interface Student {
   attendance?: string;
   isPlaced?: boolean;
   isFlagged?: boolean;
-  
+
   // New profile fields
   linkedin?: string;
   github?: string;
@@ -44,6 +44,7 @@ export interface Student {
   placedLocation?: string;
   placedRole?: string;
   placedPackage?: number;
+  raw?: any;
 }
 
 // ── STUDENT API SERVICE ──
@@ -76,7 +77,7 @@ class StudentApiService {
       tenthPercentage: data.tenthPercentage || data.tenthPer_PlacementStudent_Double || 0,
       twelfthPercentage: data.twelfthPercentage || data.twelthPer_PlacementStudent_Double || 0,
       skills: data.skills || data.skills_PlacementStudent_Text || [],
-      resumeUrl: data.resumeUrl || (data.studentResume_PlacementStudent_Document ? data.studentResume_PlacementStudent_Document.resumeUrl : ''),
+      resumeUrl: data.studentResume_PlacementStudent_Text || data.resumeUrl || (data.studentResume_PlacementStudent_Document ? data.studentResume_PlacementStudent_Document.resumeUrl : ''),
       phone: data.phone ? String(data.phone) : (data.phone_PlacementStudent_Long ? String(data.phone_PlacementStudent_Long) : ''),
       linkedin: data.linkedin || data.linkedin_PlacementStudent_Text || '',
       github: data.github || data.github_PlacementStudent_Text || '',
@@ -93,7 +94,8 @@ class StudentApiService {
       placedLocation: data.placedLocation || data.placedLocation_PlacementStudent_Text || '',
       placedRole: data.placedRole || data.role_PlacementStudent_Text || '',
       placedPackage: data.placedPackage || data.package_PlacementStudent_Int || null,
-      attendance: data.attendance || 'N/A'
+      attendance: data.attendance_PlacementStudent_Text || data.attendance || 'N/A',
+      raw: data
     };
   }
 
@@ -208,7 +210,7 @@ export class StudentsComponent implements OnInit {
   selectedIds = new Set<string>();
   showBulkModal = false;
   placedStudentsSet = new Set<string>();
-  
+
   showPlacementModal = false;
   selectedPlacementStudent: Student | null = null;
   placementForm = {
@@ -342,7 +344,7 @@ export class StudentsComponent implements OnInit {
         }
       });
       this.placedStudentsSet = pSet;
-      
+
       // Update currently loaded students if any
       if (this.students.length > 0) {
         this.students.forEach(s => {
@@ -388,7 +390,7 @@ export class StudentsComponent implements OnInit {
     this.studentApi.getOne(id).subscribe({
       next: (data: Student) => {
         this.student = data;
-        
+
         // Fetch campus drive applications and drives for this student
         forkJoin({
           apps: this.http.get<any>(`${environment.baseUrl}/placements-app/list-applications`),
@@ -402,17 +404,17 @@ export class StudentsComponent implements OnInit {
               const status = app.status || app.status_PlacementAppilcation_Text || '';
               if (status.toLowerCase() !== 'selected') return false;
 
-              return (app.studentId && String(app.studentId).toLowerCase() === id.toLowerCase()) || 
-                     (app.studentId_PlacementAppilcation_Text && String(app.studentId_PlacementAppilcation_Text).toLowerCase() === id.toLowerCase()) ||
-                     (app.rollNo && data.registerNumber && String(app.rollNo).toLowerCase() === String(data.registerNumber).toLowerCase()) ||
-                     (app.rollNo_PlacementAppilcation_Text && data.registerNumber && String(app.rollNo_PlacementAppilcation_Text).toLowerCase() === String(data.registerNumber).toLowerCase());
+              return (app.studentId && String(app.studentId).toLowerCase() === id.toLowerCase()) ||
+                (app.studentId_PlacementAppilcation_Text && String(app.studentId_PlacementAppilcation_Text).toLowerCase() === id.toLowerCase()) ||
+                (app.rollNo && data.registerNumber && String(app.rollNo).toLowerCase() === String(data.registerNumber).toLowerCase()) ||
+                (app.rollNo_PlacementAppilcation_Text && data.registerNumber && String(app.rollNo_PlacementAppilcation_Text).toLowerCase() === String(data.registerNumber).toLowerCase());
             });
 
             // Enhance applications with company and role info
             this.applications.forEach((app: any) => {
               const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
               const matchingDrive = allDrives.find((d: any) => d.id === driveId || d._id === driveId);
-              
+
               app.company = app.companyName || app.companyName_PlacementAppilcation_Text || matchingDrive?.companyName || matchingDrive?.companyName_PlacementDrive_Text || 'Unknown Company';
               app.title = app.role || app.role_PlacementAppilcation_Text || matchingDrive?.role || 'Role';
               app.ctc = app.ctc || app.packageLpa_PlacementAppilcation_Text || matchingDrive?.packageCTC || '';
@@ -436,11 +438,11 @@ export class StudentsComponent implements OnInit {
             this.cdr.detectChanges();
           },
           error: () => {
-             this.applications = [];
-             this.cdr.detectChanges();
+            this.applications = [];
+            this.cdr.detectChanges();
           }
         });
-        
+
         this.cdr.detectChanges();
       },
       error: () => {
@@ -462,18 +464,29 @@ export class StudentsComponent implements OnInit {
     this.loadStudents();
   }
 
+  statusFilter: 'all' | 'placed' | 'unplaced' = 'all';
+  optInFilter: 'all' | 'optedin' | 'optedout' = 'all';
+
   filter(resetPage: boolean = true): void {
     if (resetPage) {
       this.currentPage = 1;
     }
-    if (!this.searchQuery) {
-      this.filteredStudents = [...this.students];
-    } else {
-      const q = this.searchQuery.toLowerCase();
-      this.filteredStudents = this.students.filter(s => {
+    
+    this.filteredStudents = this.students.filter(s => {
+      // 1. Status Filter
+      if (this.statusFilter === 'placed' && !s.isPlaced) return false;
+      if (this.statusFilter === 'unplaced' && s.isPlaced) return false;
+
+      // 2. Opt-in Filter
+      if (this.optInFilter === 'optedin' && s.optInStatus !== 'opted_in') return false;
+      if (this.optInFilter === 'optedout' && s.optInStatus !== 'opted_out') return false;
+
+      // 3. Search Query Filter
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
         const isPlacedStr = s.isPlaced ? 'placed' : 'unplaced';
         return (
-          (s.name && s.name.toLowerCase().includes(q)) || 
+          (s.name && s.name.toLowerCase().includes(q)) ||
           (s.registerNumber && s.registerNumber.toLowerCase().includes(q)) ||
           (s.course && s.course.toLowerCase().includes(q)) ||
           (s.cgpa && s.cgpa.toString().toLowerCase().includes(q)) ||
@@ -481,8 +494,9 @@ export class StudentsComponent implements OnInit {
           (s.freezeStatus && s.freezeStatus.toLowerCase().includes(q)) ||
           (isPlacedStr.includes(q))
         );
-      });
-    }
+      }
+      return true;
+    });
   }
 
   toggleSelectAll(event: any): void {
@@ -492,6 +506,71 @@ export class StudentsComponent implements OnInit {
     } else {
       this.selectedIds.clear();
     }
+  }
+
+  exportTracker(): void {
+    const selectedStudents = this.students.filter(s => this.selectedIds.has(s.id));
+    if (selectedStudents.length === 0) {
+      alert('No students selected.');
+      return;
+    }
+
+    const data = selectedStudents.map(s => {
+      const raw = s.raw || {};
+      const company = raw.companyName_PlacementStudent_Text || raw.experienceCompany_PlacementStudent_Text || '';
+      const duration = raw.duration_PlacementStudent_Text || raw.experienceMonths_PlacementStudent_Int || '';
+      const workExp = (company || duration) ? 'Yes' : 'No';
+      const workExpDetails = (company || duration) ? `${company} ${duration ? '(' + duration + ' months)' : ''}` : '';
+
+      return {
+        'Email Address': raw.email_PlacementStudent_Text || raw.email || '',
+        'First Name (In Capital Letter)': (raw.firstName_PlacementStudent_Text || raw.firstName || '').toUpperCase(),
+        'Last Name (In Capital Letter)': (raw.lastName_PlacementStudent_Text || raw.lastName || '').toUpperCase(),
+        'Roll Number': raw.rollNo_PlacementStudent_Text || raw.rollNo || raw.registerNumber || '',
+        'Gender': raw.gender_PlacementStudent_Text || raw.gender || '',
+        'Date of birth': raw.dob_PlacementStudent_Date || raw.dateOfBirth || raw.dob || '',
+        'Section': raw.section_PlacementStudent_Text || raw.section || '',
+        'Specialization ': raw.specialization_PlacementStudent_Text || raw.course || raw.specialization || '',
+        'Email Id (Personal ID)': raw.personalEmail_PlacementStudent_Text || raw.personalEmail || raw.email_PlacementStudent_Text || raw.email || '',
+        'Opting for': (raw.optedIn_PlacementStudent_Bool || raw.optedIn) ? 'Placements' : '',
+        'SSLC/10th Institution Name': raw.tenthInstitution_PlacementStudent_Text || raw.tenthInstitution || '',
+        'Location of 10th School': raw.tenthLocation_PlacementStudent_Text || raw.tenthLocation || '',
+        '% in SSLC/10th': raw.tenthPer_PlacementStudent_Double || raw.tenthPercentage || '',
+        '12th/PU Institution Name': raw.twelfthInstitution_PlacementStudent_Text || raw.twelfthInstitution || '',
+        'Location of PU Institution ': raw.twelfthLocation_PlacementStudent_Text || raw.twelfthLocation || '',
+        '% in 12th/ PU': raw.twelthPer_PlacementStudent_Double || raw.twelfthPercentage || '',
+        'Degree Institution Name': raw.degreeInstitution_PlacementStudent_Text || raw.degreeInstitution || '',
+        'Location of Degree Institution ': raw.degreeLocation_PlacementStudent_Text || raw.degreeLocation || '',
+        '% in Degree (Consolidated % till 4th Sem)': raw.cgpa_PlacementStudent_Double || raw.cgpa || '',
+        'Backlogs': (raw.backlogs_PlacementStudent_Int > 0 || raw.backlogs > 0) ? 'Yes' : 'No',
+        'If yes, how many backlog ': raw.backlogs_PlacementStudent_Int || raw.backlogs || '',
+        'PG Institution Name': raw.pgInstitution_PlacementStudent_Text || raw.pgInstitution || 'Kristu Jayanti College',
+        '% in PG Degree (Consolidated % till 4th Sem)2': raw.pgPer_PlacementStudent_Double || '',
+        'Backlog in PG': (parseInt(raw.pgBacklogs_PlacementStudent_Text) > 0) ? 'Yes' : 'No',
+        'If yes, how many backlog 2': raw.pgBacklogs_PlacementStudent_Text || '',
+        'Do you have work Experience (Including Internship) ? ': workExp,
+        'If you have, Company Name & Number of months of experience': workExpDetails,
+        'Mobile No (10 digit number)': raw.phone_PlacementStudent_Long || raw.phone || '',
+        'Alternative Mobile No': raw.altPhone_PlacementStudent_Long || raw.altPhone || '',
+        'PAN Card No': raw.panCard_PlacementStudent_Text || raw.panCard || '',
+        'Driving License No': raw.drivingLicense_PlacementStudent_Text || raw.drivingLicense || '',
+        'Aadhar Card No': raw.aadhar_PlacementStudent_Long || raw.aadhar || '',
+        'Blood Group': raw.bloodGroup_PlacementStudent_Text || raw.bloodGroup || '',
+        'Father Name': raw.fatherName_PlacementStudent_Text || raw.fatherName || '',
+        'Father Occupation': raw.fatherOccupation_PlacementStudent_Text || raw.fatherOccupation || '',
+        'Permanent Address ': raw.permanentAddress_PlacementStudent_Text || raw.permanentAddress || '',
+        'Present Address': raw.presentAddress_PlacementStudent_Text || raw.presentAddress || '',
+        ' Will you adhere to the CECR Placement Guidelines': (raw.optedIn_PlacementStudent_Bool || raw.optedIn) ? 'Yes' : '',
+        'Attendance percentage (4th sem)': raw.attendance_PlacementStudent_Text || raw.attendance || '',
+        'Upload your resume (File name should be Student name_Roll No)': raw.studentResume_PlacementStudent_Text || raw.resumeUrl || '',
+        'Upload your Declaration Form (File name should be Student name_Roll No)': raw.declaration_PlacementStudent_Text || raw.declarationUrl || ''
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Selected Students');
+    XLSX.writeFile(wb, `master_tracker.csv`, { bookType: 'csv' });
   }
 
   toggleSelect(id: string): void {
@@ -560,7 +639,7 @@ export class StudentsComponent implements OnInit {
         flagged: !current,
         flagged_PlacementStudent_Bool: !current
       };
-      
+
       if (!current) {
         // If getting flagged, force opt-out
         payload.optedIn = false;
@@ -856,7 +935,7 @@ export class StudentsComponent implements OnInit {
 
   submitManualPlacement(isPlaced: boolean) {
     if (!this.selectedPlacementStudent) return;
-    
+
     const payload: any = {
       placedStatus_PlacementStudent_Bool: isPlaced
     };

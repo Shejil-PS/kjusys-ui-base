@@ -247,6 +247,15 @@
       <h1 style="font-family:'DM Sans',sans-serif; font-size:18px; font-weight:400; color:#000;">Students</h1>
     </div>
     <div class="flex items-center gap-2">
+      <button [disabled]="selectedIds.size === 0" (click)="exportTracker()"
+        class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Export Tracker
+      </button>
       <button [disabled]="selectedIds.size === 0" (click)="openBulkUpdate()"
         class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
         Bulk Action ({{ selectedIds.size }})
@@ -261,6 +270,21 @@
       <div class="relative flex-1">
         <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchInput()" (keyup.enter)="onSearchInput()" placeholder="Search by name or register number…"
           class="w-full h-[36px] border border-gray-200 rounded-lg pl-10 pr-4 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+      </div>
+      <div class="flex items-center gap-2">
+        <select [(ngModel)]="statusFilter" (ngModelChange)="filter()" 
+          class="h-[36px] border border-gray-200 rounded-lg px-3 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 bg-white cursor-pointer">
+          <option value="all">All Placement Status</option>
+          <option value="placed">Placed</option>
+          <option value="unplaced">Unplaced</option>
+        </select>
+        
+        <select [(ngModel)]="optInFilter" (ngModelChange)="filter()" 
+          class="h-[36px] border border-gray-200 rounded-lg px-3 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 bg-white cursor-pointer">
+          <option value="all">All Opt-In Status</option>
+          <option value="optedin">Opted In</option>
+          <option value="optedout">Opted Out</option>
+        </select>
       </div>
     </div>
 

@@ -192,6 +192,7 @@ export class DashboardComponent implements OnInit {
   selectedStandardReport: string = 'placed';
   selectedStandardFieldsCount = 0;
   selectedCustomFieldsCount = 0;
+  allFieldsSelected = false;
 
   standardReportFields = [
     { key: 'placed', label: 'Placed Students', checked: false, category: 'Placement' },
@@ -644,6 +645,12 @@ export class DashboardComponent implements OnInit {
   updateFieldsCount(): void {
     this.selectedStandardFieldsCount = this.standardReportFields.filter(f => f.checked).length;
     this.selectedCustomFieldsCount = this.customReportFields.filter(f => f.checked).length;
+    this.allFieldsSelected = this.selectedCustomFieldsCount === this.customReportFields.length && this.customReportFields.length > 0;
+  }
+
+  toggleAllCustomFields(): void {
+    this.customReportFields.forEach(f => f.checked = this.allFieldsSelected);
+    this.updateFieldsCount();
   }
 
   generateReport(): void {

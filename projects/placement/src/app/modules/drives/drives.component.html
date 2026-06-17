@@ -807,6 +807,12 @@
             class="w-3.5 h-3.5 accent-blue-600 rounded cursor-pointer" />
           <span>{{ f.label }}</span>
         </label>
+
+        <label class="field-checkbox flex items-center gap-2.5 py-1.5 text-gray-800 font-medium cursor-pointer select-none mt-2 border-t border-gray-100 pt-2">
+          <input type="checkbox" [(ngModel)]="includeQuestionsInExport"
+            class="w-3.5 h-3.5 accent-blue-600 rounded cursor-pointer" />
+          <span>Include Application Questions</span>
+        </label>
       </div>
 
       <div *ngIf="showSaveCustomTemplate" class="border-t border-gray-100 pt-3 mt-1 space-y-2">
@@ -826,7 +832,7 @@
       </div>
     </div>
 
-    <div class="px-5 py-4 border-t border-gray-100 flex flex-col gap-2 flex-shrink-0">
+    <div class="px-5 pt-4 pb-10 border-t border-gray-100 flex flex-col gap-2 flex-shrink-0">
       <button (click)="exportToExcel()"
         class="btn-primary justify-center flex items-center gap-1.5 w-full py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-xs">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
