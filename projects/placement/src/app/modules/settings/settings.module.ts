@@ -6,6 +6,8 @@ import { SettingsModuleRoutingModule } from './settings-routing.module';
 import { SettingsComponent } from './settings.component';
 
 
+import { TabsModule } from '@libs/tabs';
+
 @NgModule({
   declarations: [
     SettingsComponent
@@ -13,7 +15,8 @@ import { SettingsComponent } from './settings.component';
   imports: [
     CommonModule,
     SettingsModuleRoutingModule,
-    FormsModule
+    FormsModule,
+    TabsModule
   ]
 })
 export class SettingsModule { }

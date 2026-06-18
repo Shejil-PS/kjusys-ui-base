@@ -467,25 +467,57 @@ export class DashboardComponent implements OnInit {
       return { school: dept, department: spec };
     };
 
+    // Calculate application counts per student to determine 'active' status
+    const studentAppCounts: { [key: string]: number } = {};
+    this.allApplications.forEach((app: any) => {
+      const sId = String(app.studentId || app.studentId_PlacementAppilcation_Text || '').toLowerCase().trim();
+      const sRoll = String(app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase().trim();
+      if (sId) {
+        studentAppCounts[sId] = (studentAppCounts[sId] || 0) + 1;
+      }
+      if (sRoll && sRoll !== sId) {
+        studentAppCounts[sRoll] = (studentAppCounts[sRoll] || 0) + 1;
+      }
+    });
+
+    const isStudentActive = (s: any): boolean => {
+      const sId = String(s.id || s._id || '').toLowerCase().trim();
+      const sRoll = String(s.registerNumber || s.rollNo || s.rollNo_PlacementStudent_Text || '').toLowerCase().trim();
+      // Total apps matching either ID or Roll
+      let appCount = studentAppCounts[sId] || 0;
+      if (sRoll && sRoll !== sId && studentAppCounts[sRoll]) {
+        appCount += studentAppCounts[sRoll];
+      }
+      return appCount > 5;
+    };
+
     // Initialize an empty map to group dynamically by database department name and courses
-    const schoolsMap: { [schoolName: string]: { [deptName: string]: { placed: number; total: number } } } = {};
+    const schoolsMap: { [schoolName: string]: { [deptName: string]: { placed: number; total: number; activeTotal: number; activePlaced: number; } } } = {};
 
     // Aggregate student metrics dynamically
     students.forEach(s => {
       const { school, department } = getSchoolAndDept(s);
       const isPlaced = isStudentPlaced(s);
       const isOpted = isStudentOptedIn(s);
+      const isActive = isStudentActive(s);
 
       if (isOpted) {
         if (!schoolsMap[school]) {
           schoolsMap[school] = {};
         }
         if (!schoolsMap[school][department]) {
-          schoolsMap[school][department] = { placed: 0, total: 0 };
+          schoolsMap[school][department] = { placed: 0, total: 0, activeTotal: 0, activePlaced: 0 };
         }
         schoolsMap[school][department].total++;
         if (isPlaced) {
           schoolsMap[school][department].placed++;
+        }
+        
+        if (isActive) {
+          schoolsMap[school][department].activeTotal++;
+          if (isPlaced) {
+            schoolsMap[school][department].activePlaced++;
+          }
         }
       }
     });
@@ -500,11 +532,15 @@ export class DashboardComponent implements OnInit {
         schoolPlaced += d.placed;
         schoolTotal += d.total;
         const rateVal = d.total > 0 ? Math.round((d.placed / d.total) * 100) + '%' : '0%';
+        const activeRateVal = d.activeTotal > 0 ? Math.round((d.activePlaced / d.activeTotal) * 100) + '%' : '0%';
         return {
           name: deptName,
           placed: d.placed,
           total: d.total,
-          rate: rateVal
+          rate: rateVal,
+          activePlaced: d.activePlaced,
+          activeTotal: d.activeTotal,
+          activeRate: activeRateVal
         };
       });
 

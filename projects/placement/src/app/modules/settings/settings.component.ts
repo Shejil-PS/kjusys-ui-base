@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { TabItem } from '@libs/tabs';
 
 @Component({
   selector: 'app-settings',
@@ -13,6 +14,12 @@ export class SettingsComponent implements OnInit {
   isUpdating = false;
   selectedFile: File | null = null;
   selectedFileName = '';
+  activeTab = 'declaration';
+
+  tabs: TabItem[] = [
+    { id: 'declaration', label: 'Declaration Form', subtitle: 'Upload & view T&Cs' },
+    { id: 'general', label: 'General', subtitle: 'System preferences' }
+  ];
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
