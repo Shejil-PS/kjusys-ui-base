@@ -227,7 +227,7 @@ export class DashboardComponent implements OnInit {
   BATCH_MASTER: any[] = [];
 
   companies: Array<{ id: number; masterId: string; name: string; industry: string }> = [];
-  jobs: { [key: number]: Array<{ role: string; type: string; descType?: string; desc: string; ctc: string; minAgg: number | null; backlogAllowed: boolean; _open: boolean }> } = {};
+  jobs: { [key: number]: Array<{ role: string; type: string; descType?: string; desc: string; descFileName?: string; ctc: string; minAgg: number | null; backlogAllowed: boolean; _open: boolean }> } = {};
   batchDates: {
     [key: string]: {
       batches: string[];
@@ -1209,6 +1209,7 @@ export class DashboardComponent implements OnInit {
       type: 'Full-Time',
       descType: 'text',
       desc: '',
+      descFileName: '',
       ctc: '',
       minAgg: null,
       backlogAllowed: false,
@@ -1223,9 +1224,20 @@ export class DashboardComponent implements OnInit {
   onJobDescFileChange(event: any, j: any): void {
     const file = event.target.files[0];
     if (file) {
-      j.desc = file.name;
+      j.descFileName = file.name;
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        j.desc = reader.result as string;
+      };
+      reader.onerror = (error) => {
+        console.error('File read error:', error);
+        j.desc = '';
+        j.descFileName = '';
+      };
     } else {
       j.desc = '';
+      j.descFileName = '';
     }
   }
 

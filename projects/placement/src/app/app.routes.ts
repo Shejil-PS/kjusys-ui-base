@@ -59,6 +59,17 @@ export const APP_ROUTES: Routes = [
               throw error;
             }),
       },
+      {
+        path: 'settings',
+        loadChildren: () =>
+          import('./modules/settings/settings.module')
+            .then((m) => m.SettingsModule)
+            .catch((error) => {
+               console.error('Error loading SettingsModule', error);
+               throw error;
+            }),
+      },
+
 
 
 

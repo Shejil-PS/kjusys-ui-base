@@ -31,6 +31,13 @@
         "subPath": "placement/drives",
         "ngModuleName": "DrivesModule",
         "pinned": false
+      },
+      {
+        "exposedModule": "./SettingsModule",
+        "displayName": "Settings",
+        "subPath": "placement/settings",
+        "ngModuleName": "SettingsModule",
+        "pinned": false
       }
     ]
   }

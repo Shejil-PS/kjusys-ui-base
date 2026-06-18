@@ -517,10 +517,20 @@ export class StudentsComponent implements OnInit {
 
     const data = selectedStudents.map(s => {
       const raw = s.raw || {};
-      const company = raw.companyName_PlacementStudent_Text || raw.experienceCompany_PlacementStudent_Text || '';
-      const duration = raw.duration_PlacementStudent_Text || raw.experienceMonths_PlacementStudent_Int || '';
-      const workExp = (company || duration) ? 'Yes' : 'No';
-      const workExpDetails = (company || duration) ? `${company} ${duration ? '(' + duration + ' months)' : ''}` : '';
+      let workExpDetails = '';
+      if (raw.internshipDetails_PlacementStudent_DocumentArray && Array.isArray(raw.internshipDetails_PlacementStudent_DocumentArray)) {
+        workExpDetails = raw.internshipDetails_PlacementStudent_DocumentArray.map((i: any) => {
+          const comp = i.companyName_PlacementStudent_Text || '';
+          const dur = i.duration_PlacementStudent_Text || '';
+          return comp ? `${comp} ${dur ? '(' + dur + ' months)' : ''}`.trim() : '';
+        }).filter((x: string) => x).join(', ');
+      }
+      if (!workExpDetails) {
+        const company = raw.companyName_PlacementStudent_Text || raw.experienceCompany_PlacementStudent_Text || '';
+        const duration = raw.duration_PlacementStudent_Text || raw.experienceMonths_PlacementStudent_Int || '';
+        workExpDetails = (company || duration) ? `${company} ${duration ? '(' + duration + ' months)' : ''}`.trim() : '';
+      }
+      const workExp = workExpDetails ? 'Yes' : 'No';
 
       return {
         'Email Address': raw.email_PlacementStudent_Text || raw.email || '',
