@@ -40,6 +40,7 @@ export interface Student {
   achievements?: string;
   internshipDetails?: any[];
   offerLetter?: any;
+  declarationFileName?: string | null;
   placedCompany?: string;
   placedLocation?: string;
   placedRole?: string;
@@ -90,6 +91,7 @@ class StudentApiService {
         duration: i.duration_PlacementStudent_Text || i.duration || ''
       })),
       offerLetter: data.offerLetter || data.offerLetter_PlacementStudent_Document || null,
+      declarationFileName: data.declaration_PlacementStudent_Text || data.declarationUrl || null,
       placedCompany: data.placedCompany || data.placedCompany_PlacementStudent_Text || '',
       placedLocation: data.placedLocation || data.placedLocation_PlacementStudent_Text || '',
       placedRole: data.placedRole || data.role_PlacementStudent_Text || '',
