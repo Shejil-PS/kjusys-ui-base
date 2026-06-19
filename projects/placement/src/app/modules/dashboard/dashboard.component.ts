@@ -159,7 +159,7 @@ export class DashboardComponent implements OnInit {
   batchApi: BatchApiService;
 
   academicYears: string[] = ['2022–2023', '2023–2024', '2024–2025', '2025–2026'];
-  selectedAcademicYear = '2024–2025';
+  selectedAcademicYear = '2025–2026';
 
   allStudents: any[] = [];
   allCompanies: any[] = [];
@@ -364,18 +364,25 @@ export class DashboardComponent implements OnInit {
   }
 
   calculateStats(): void {
-    const targetYearPrefix = this.selectedAcademicYear.substring(2, 4); // e.g. "24" for "2024–2025"
+    if (this.selectedAcademicYear !== '2025–2026') {
+      this.stats = {
+        optedInStudents: 0,
+        drivesThisYear: 0,
+        totalPlaced: 0,
+        placementRate: '0%',
+        companies: 0
+      };
+      this.topRecruiters = [];
+      this.schools = [];
+      this.recentDrives = [];
+      this.chartPoints = [];
+      this.chartLinePath = '';
+      this.chartAreaPath = '';
+      return;
+    }
 
-    // Filter students belonging to this academic year batch
-    const students = this.allStudents.filter(s => {
-      const code = s.batchCode || s.batchCode_PlacementStudent_Text || '';
-      const match = code.match(/^\d{2}/);
-      if (match) return match[0] === targetYearPrefix;
-      const reg = s.rollNo || s.registerNumber || s.rollNo_PlacementStudent_Text || '';
-      const matchReg = reg.match(/^\d{2}/);
-      if (matchReg) return matchReg[0] === targetYearPrefix;
-      return false;
-    });
+    // Since we only process for 2025-2026, we include all students
+    const students = this.allStudents;
 
     // Determine placed students based on their applications status
     const placedStudentsSet = new Set<string>();
