@@ -43,7 +43,7 @@
     <!-- Search Bar -->
     <div class="p-4 border-b border-gray-100">
       <div class="relative max-w-full">
-        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchInput()" (keyup.enter)="onSearchInput()"
+        <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="onSearchInput()"
           class="w-full h-9 border border-gray-200 rounded-lg pl-10 pr-4 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
           placeholder="Search by name or industry…" aria-label="Search companies" />
       </div>

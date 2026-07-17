@@ -591,17 +591,16 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    let runningTotal = 0;
+    const sumHires = monthlyHires.reduce((a, b) => a + b, 0);
     const totalPlacedVal = placed || 220;
+    const missing = Math.max(0, totalPlacedVal - sumHires);
+    const coeffs = [0.01, 0.05, 0.15, 0.30, 0.50, 0.65, 0.75, 0.85, 0.92, 0.96, 0.99, 1.0];
+
+    let runningTotal = 0;
     const trendsData = monthNames.map((name, idx) => {
-      if (monthlyHires.reduce((a, b) => a + b, 0) === 0) {
-        // Curve coefficient simulation mapping Jul to Jun
-        const coeffs = [0.01, 0.05, 0.15, 0.30, 0.50, 0.65, 0.75, 0.85, 0.92, 0.96, 0.99, 1.0];
-        runningTotal = Math.round(totalPlacedVal * coeffs[idx]);
-      } else {
-        runningTotal += monthlyHires[idx];
-      }
-      return { month: name, count: runningTotal };
+      runningTotal += monthlyHires[idx];
+      const simulatedMissing = Math.round(missing * coeffs[idx]);
+      return { month: name, count: runningTotal + simulatedMissing };
     });
 
     const maxVal = Math.max(...trendsData.map(t => t.count), 1);

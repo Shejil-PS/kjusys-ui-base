@@ -1250,7 +1250,16 @@ export class DrivesComponent implements OnInit {
       return;
     }
 
-    const data = this.candidates.map(c => {
+    const targetCandidates = this.selectedCandidateIds.size > 0 
+      ? this.candidates.filter(c => this.selectedCandidateIds.has(c.id)) 
+      : this.candidates;
+
+    if (targetCandidates.length === 0) {
+      alert('No candidates available to export.');
+      return;
+    }
+
+    const data = targetCandidates.map(c => {
       const row: any = {};
       const s = c.rawStudent || {};
 
