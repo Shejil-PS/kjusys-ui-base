@@ -629,11 +629,7 @@ export class DrivesComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        c.status = val;
-        this.showToast(`Status updated for ${c.name} (offline simulation).`);
-        if (val === 'Selected' || val === 'SELECTED') {
-          this.handleStudentSelection(c.reg, this.activeDrive!.id);
-        }
+        this.showToast(`Failed to update status for ${c.name}. Please try again.`, 'error');
         this.cdr.detectChanges();
       }
     });

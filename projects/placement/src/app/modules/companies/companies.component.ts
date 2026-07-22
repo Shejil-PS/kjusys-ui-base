@@ -26,7 +26,7 @@ export interface Company {
 const API_BASE_URL = environment.baseUrl + '/placements-app';
 const API_ROUTES = {
   companies: {
-    list: `${API_BASE_URL}/list-comnpanies`,
+    list: `${API_BASE_URL}/list-companies`,
     create: `${API_BASE_URL}/create-company`,
     detail: (id: string) => `${API_BASE_URL}/get-company/${id}`,
     update: (id: string) => `${API_BASE_URL}/update-company/${id}`,

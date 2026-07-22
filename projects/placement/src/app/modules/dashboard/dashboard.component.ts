@@ -35,7 +35,7 @@ class StudentApiService {
 class CompanyApiService {
   constructor(private http: HttpClient) {}
   list(): Observable<any[]> {
-    return this.http.get<any[]>(environment.baseUrl + '/placements-app/list-comnpanies');
+    return this.http.get<any[]>(environment.baseUrl + '/placements-app/list-companies');
   }
 }
 
