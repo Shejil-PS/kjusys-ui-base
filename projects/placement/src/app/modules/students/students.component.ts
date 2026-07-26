@@ -41,6 +41,7 @@ export interface Student {
   internshipDetails?: any[];
   offerLetter?: any;
   declarationFileName?: string | null;
+  declarationUrl?: string | null;
   placedCompany?: string;
   placedLocation?: string;
   placedRole?: string;
@@ -91,7 +92,8 @@ class StudentApiService {
         duration: i.duration_PlacementStudent_Text || i.duration || ''
       })),
       offerLetter: data.offerLetter || data.offerLetter_PlacementStudent_Document || null,
-      declarationFileName: data.declaration_PlacementStudent_Text || data.declarationUrl || null,
+      declarationFileName: data.declaration_PlacementStudent_Text || data.declarationFileName || data.declarationUrl || (typeof data.declaration === 'string' ? data.declaration : null) || null,
+      declarationUrl: data.declarationUrl || data.declarationUrl_PlacementStudent_Text || data.declaration_PlacementStudent_Document?.url || data.declaration_PlacementStudent_Document?.declarationUrl || data.declaration_PlacementStudent_Text || (typeof data.declaration === 'string' ? data.declaration : null) || null,
       placedCompany: data.placedCompany || data.placedCompany_PlacementStudent_Text || '',
       placedLocation: data.placedLocation || data.placedLocation_PlacementStudent_Text || '',
       placedRole: data.placedRole || data.role_PlacementStudent_Text || '',
@@ -203,6 +205,8 @@ export class StudentsComponent implements OnInit {
   selectedStudentId: string | null = null;
   student: Student | null = null;
   applications: any[] = [];
+  studentDriveApplications: any[] = [];
+  showDrivesDropdown = false;
 
   students: Student[] = [];
 
@@ -396,51 +400,163 @@ export class StudentsComponent implements OnInit {
         // Fetch campus drive applications and drives for this student
         forkJoin({
           apps: this.http.get<any>(`${environment.baseUrl}/placements-app/list-applications`),
-          drives: this.http.get<any>(`${environment.baseUrl}/placements-app/list-drives`)
+          drives: this.http.get<any>(`${environment.baseUrl}/placements-app/placements`)
         }).subscribe({
           next: ({ apps, drives }) => {
-            const allApps = apps && apps.responseData?.data ? apps.responseData.data : (Array.isArray(apps) ? apps : []);
-            const allDrives = drives && drives.responseData?.data ? drives.responseData.data : (Array.isArray(drives) ? drives : []);
+            // Extract data arrays (handle nested responseData)
+            const rawApps = apps && apps.responseData?.data?.data ? apps.responseData.data.data : (apps && apps.responseData?.data ? apps.responseData.data : (apps && apps.responseData ? apps.responseData : (apps && apps.data ? apps.data : (Array.isArray(apps) ? apps : []))));
+            const allApps = Array.isArray(rawApps) ? rawApps : [];
 
+            const rawDrives = drives && drives.responseData?.data?.data ? drives.responseData.data.data : (drives && drives.responseData?.data ? drives.responseData.data : (drives && drives.responseData ? drives.responseData : (drives && drives.data ? drives.data : (Array.isArray(drives) ? drives : []))));
+            const drivesList = Array.isArray(rawDrives) ? rawDrives : [];
+
+            // Flatten placements into individual drive/job entries (placements have nested jobs)
+            const allDrives: any[] = [];
+            drivesList.forEach((p: any) => {
+              const jobsArray = p.jobs_PlacementDrive_DocumentArray || p.jobs;
+              const companyName = p.companyName_PlacementDrive_Text || p.companyName || p.company || '';
+              const placementId = p._id || p.id;
+              if (jobsArray && Array.isArray(jobsArray)) {
+                jobsArray.forEach((j: any) => {
+                  allDrives.push({
+                    _id: placementId,
+                    jobId: j.jobId_PlacementDrive_Text || j.jobId || '',
+                    placementId: placementId,
+                    companyName: companyName,
+                    companyName_PlacementDrive_Text: companyName,
+                    role: j.role_PlacementDrive_Text || j.role || '',
+                    role_PlacementDrive_Text: j.role_PlacementDrive_Text || j.role || '',
+                    packageCTC: j.packageLpa_PlacementDrive_Text || j.packageLPA || '',
+                    location: p.address || j.location || '',
+                    eligibleBatches: j.eligibleBatches_PlacementDrive_TextArray ? j.eligibleBatches_PlacementDrive_TextArray.join(', ') : (j.eligibleBatches ? (Array.isArray(j.eligibleBatches) ? j.eligibleBatches.join(', ') : j.eligibleBatches) : (p.batchCode_PlacementDrive_Text || p.batchCode || ''))
+                  });
+                });
+              } else {
+                allDrives.push({
+                  _id: placementId,
+                  placementId: placementId,
+                  companyName: companyName,
+                  companyName_PlacementDrive_Text: companyName,
+                  role: p.role || '',
+                  role_PlacementDrive_Text: p.role || '',
+                  packageCTC: p.packageCTC || '',
+                  location: p.location || '',
+                  eligibleBatches: p.batchCode_PlacementDrive_Text || p.batchCode || ''
+                });
+              }
+            });
+
+            // Helper to extract studentId from an application
+            const getAppStudentId = (app: any): string => {
+              let sid = app.studentId || app.studentId_PlacementAppilcation_Text || app.userId || '';
+              if (app.student && typeof app.student === 'object') {
+                sid = app.student._id || app.student.id || sid;
+              } else if (typeof app.student === 'string') {
+                sid = app.student;
+              }
+              return String(sid).toLowerCase();
+            };
+
+            const getAppRollNo = (app: any): string => {
+              return String(app.rollNo || app.rollNo_PlacementAppilcation_Text || '').toLowerCase();
+            };
+
+            const studentIdLower = id.toLowerCase();
+            const regNumLower = data.registerNumber ? String(data.registerNumber).toLowerCase() : '';
+
+            const isStudentApp = (app: any): boolean => {
+              const appSid = getAppStudentId(app);
+              const appRoll = getAppRollNo(app);
+              return (appSid !== '' && appSid === studentIdLower) ||
+                (appRoll !== '' && regNumLower !== '' && appRoll === regNumLower);
+            };
+
+            // Helper to find matching drive
+            const findDrive = (app: any): any => {
+              const appPlacementId = app.placementId || app.placementId_PlacementAppilcation_Text || '';
+              const appJobId = app.jobId || app.jobId_PlacementAppilcation_Text || '';
+              const appDriveId = app.driveId || '';
+              return allDrives.find((d: any) => {
+                const dId = d._id || d.id || '';
+                const dJobId = d.jobId || '';
+                const dPlacementId = d.placementId || '';
+                return (appDriveId && dId === appDriveId) ||
+                  (appJobId && dJobId && String(appJobId) === String(dJobId)) ||
+                  (appPlacementId && (dId === appPlacementId || dPlacementId === appPlacementId));
+              });
+            };
+
+            // Filter for selected applications (placement history)
             this.applications = allApps.filter((app: any) => {
               const status = app.status || app.status_PlacementAppilcation_Text || '';
-              if (status.toLowerCase() !== 'selected') return false;
-
-              return (app.studentId && String(app.studentId).toLowerCase() === id.toLowerCase()) ||
-                (app.studentId_PlacementAppilcation_Text && String(app.studentId_PlacementAppilcation_Text).toLowerCase() === id.toLowerCase()) ||
-                (app.rollNo && data.registerNumber && String(app.rollNo).toLowerCase() === String(data.registerNumber).toLowerCase()) ||
-                (app.rollNo_PlacementAppilcation_Text && data.registerNumber && String(app.rollNo_PlacementAppilcation_Text).toLowerCase() === String(data.registerNumber).toLowerCase());
+              return status.toLowerCase() === 'selected' && isStudentApp(app);
             });
 
             // Enhance applications with company and role info
             this.applications.forEach((app: any) => {
-              const driveId = app.driveId || app.placementId || app.placementId_PlacementAppilcation_Text;
-              const matchingDrive = allDrives.find((d: any) => d.id === driveId || d._id === driveId);
-
+              const matchingDrive = findDrive(app);
               app.company = app.companyName || app.companyName_PlacementAppilcation_Text || matchingDrive?.companyName || matchingDrive?.companyName_PlacementDrive_Text || 'Unknown Company';
               app.title = app.role || app.role_PlacementAppilcation_Text || matchingDrive?.role || 'Role';
               app.ctc = app.ctc || app.packageLpa_PlacementAppilcation_Text || matchingDrive?.packageCTC || '';
               app.location = app.location || app.location_PlacementAppilcation_Text || matchingDrive?.location || 'N/A';
+              app.status = app.status || app.status_PlacementAppilcation_Text || '';
             });
 
             // If not manually placed, fetch from drive application
             if (!this.student?.placedCompany && this.applications.length > 0) {
-              const selectedApp = this.applications[0]; // All items in this.applications are already filtered by 'selected'
+              const selectedApp = this.applications[0];
               if (this.student) {
                 this.student.isPlaced = true;
                 this.student.placedCompany = selectedApp.company;
                 this.student.placedRole = selectedApp.title;
                 this.student.placedLocation = selectedApp.location;
-                // Extract number from CTC if it has 'LPA'
                 const packageVal = selectedApp.ctc ? parseInt(String(selectedApp.ctc)) : undefined;
                 this.student.placedPackage = isNaN(packageVal as any) ? undefined : packageVal;
               }
             }
 
+            // Build drive list for this student — show all eligible drives with applied/status
+            const studentApps = allApps.filter((app: any) => isStudentApp(app));
+            const studentBatch = data.batchCode || '';
+
+            this.studentDriveApplications = allDrives.map((drive: any) => {
+              // Check if the student's batch is eligible for this drive
+              const driveBatches = drive.eligibleBatches || '';
+              if (studentBatch && driveBatches && !driveBatches.toLowerCase().includes(studentBatch.toLowerCase())) {
+                return null; // not eligible
+              }
+
+              // Find matching application from this student for this drive
+              const matchedApp = studentApps.find((app: any) => {
+                const appPlacementId = app.placementId || app.placementId_PlacementAppilcation_Text || '';
+                const appJobId = app.jobId || app.jobId_PlacementAppilcation_Text || '';
+                const appDriveId = app.driveId || '';
+                const dId = drive._id || drive.id || '';
+                const dJobId = drive.jobId || '';
+                const dPlacementId = drive.placementId || '';
+                return (appDriveId && dId === appDriveId) ||
+                  (appJobId && dJobId && String(appJobId) === String(dJobId)) ||
+                  (appPlacementId && (dId === appPlacementId || dPlacementId === appPlacementId));
+              });
+
+              let status = 'Not Applied';
+              if (matchedApp) {
+                const rawStatus = matchedApp.status || matchedApp.status_PlacementAppilcation_Text || 'Applied';
+                status = rawStatus === 'Applied' ? 'In Progress' : rawStatus;
+              }
+
+              return {
+                company: drive.companyName || drive.companyName_PlacementDrive_Text || 'Unknown Company',
+                title: drive.role || drive.role_PlacementDrive_Text || '',
+                status: status
+              };
+            }).filter((d: any) => d !== null);
+
             this.cdr.detectChanges();
           },
           error: () => {
             this.applications = [];
+            this.studentDriveApplications = [];
             this.cdr.detectChanges();
           }
         });
@@ -450,6 +566,7 @@ export class StudentsComponent implements OnInit {
       error: () => {
         this.student = null;
         this.applications = [];
+        this.studentDriveApplications = [];
         this.cdr.detectChanges();
       }
     });
@@ -464,6 +581,25 @@ export class StudentsComponent implements OnInit {
     this.selectedStudentId = null;
     this.student = null;
     this.loadStudents();
+  }
+
+  downloadDeclaration(student: Student, event?: MouseEvent): void {
+    const fileTarget = student.declarationUrl || student.declarationFileName;
+    if (!fileTarget) return;
+
+    if (fileTarget.startsWith('http://') || fileTarget.startsWith('https://') || fileTarget.startsWith('data:') || fileTarget.startsWith('blob:')) {
+      window.open(fileTarget, '_blank');
+      if (event) event.preventDefault();
+    } else {
+      const link = document.createElement('a');
+      link.href = fileTarget.startsWith('/') || fileTarget.startsWith('./') ? fileTarget : `${environment.baseUrl}/uploads/${fileTarget}`;
+      link.download = student.declarationFileName || 'Declaration_Form.pdf';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (event) event.preventDefault();
+    }
   }
 
   statusFilter: 'all' | 'placed' | 'unplaced' = 'all';

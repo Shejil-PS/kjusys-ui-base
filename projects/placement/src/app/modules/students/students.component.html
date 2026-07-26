@@ -131,10 +131,13 @@
         <!-- Declaration Form -->
         <div style="border-top:1px solid #f3f4f6; padding-top:12px; margin-top:16px;">
           <p style="font-size:12px; font-weight:500; color:#6b7280; margin-bottom:8px;">Declaration Form</p>
-          <div *ngIf="student.declarationFileName">
-            <div
-              style="display:flex; align-items:center; gap:10px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px;"
-              class="hover:bg-blue-50">
+          <div *ngIf="student.declarationFileName || student.declarationUrl">
+            <a [href]="student.declarationUrl || student.declarationFileName"
+               [download]="student.declarationFileName || 'Declaration_Form.pdf'"
+               target="_blank"
+               (click)="downloadDeclaration(student, $event)"
+               style="display:flex; align-items:center; gap:10px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; text-decoration:none; transition:background-color 0.2s;"
+               class="hover:bg-blue-100 cursor-pointer">
               <div
                 style="background:#dbeafe; padding:6px; border-radius:6px; display:flex; align-items:center; justify-content:center;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"
@@ -149,12 +152,18 @@
               <div style="flex:1; min-width:0;">
                 <p
                   style="font-size:12px; font-weight:600; color:#2563eb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                  {{student.declarationFileName}}
+                  {{student.declarationFileName || 'Declaration Form'}}
                 </p>
               </div>
-            </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </a>
           </div>
-          <p *ngIf="!student.declarationFileName" style="font-size:12px; color:#9ca3af; font-style:italic;">No declaration form
+          <p *ngIf="!student.declarationFileName && !student.declarationUrl" style="font-size:12px; color:#9ca3af; font-style:italic;">No declaration form
             uploaded.</p>
         </div>
       </div>
@@ -304,6 +313,54 @@
         <ng-template #noApps>
           <p style="font-size:12px; color:#9ca3af; font-style:italic;">No drive applications found.</p>
         </ng-template>
+
+        <!-- Campus Drives (collapsible) -->
+        <div (click)="showDrivesDropdown = !showDrivesDropdown"
+          style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-top:20px; margin-bottom:4px; padding:8px 0;">
+          <p
+            style="font-size:12px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px; margin:0;">
+            Campus Drives
+            <span *ngIf="studentDriveApplications && studentDriveApplications.length > 0"
+              style="font-weight:400; color:#9ca3af; text-transform:none; letter-spacing:0;">
+              ({{studentDriveApplications.length}})</span>
+          </p>
+          <svg [style.transform]="showDrivesDropdown ? 'rotate(180deg)' : 'rotate(0)'"
+            style="transition:transform 0.2s ease; flex-shrink:0;" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        <div *ngIf="showDrivesDropdown">
+          <div *ngIf="studentDriveApplications && studentDriveApplications.length > 0; else noDriveApps">
+            <div
+              style="display:grid; grid-template-columns:1fr 140px; padding:8px 12px; border-bottom:1px solid #f3f4f6; background:#f9fafb; border-radius:6px 6px 0 0;">
+              <span style="font-size:11px; font-weight:500; color:#9ca3af;">Drive</span>
+              <span style="font-size:11px; font-weight:500; color:#9ca3af; text-align:right;">Status</span>
+            </div>
+            <div *ngFor="let driveApp of studentDriveApplications; let last = last"
+              [style.border-bottom]="!last ? '1px solid #f3f4f6' : 'none'"
+              style="display:grid; grid-template-columns:1fr 140px; align-items:center; padding:12px;">
+              <div>
+                <p style="font-weight:600; font-size:12px; color:#111827;">{{driveApp.company}}</p>
+                <p style="font-size:11px; color:#6b7280; margin-top:2px;" *ngIf="driveApp.title">{{driveApp.title}}</p>
+              </div>
+              <div style="text-align:right;">
+                <span [class.badge-selected]="driveApp.status === 'Selected'"
+                  [class.badge-progress]="driveApp.status === 'In Progress' || driveApp.status === 'Applied'"
+                  [class.badge-notselected]="driveApp.status === 'Not Selected' || driveApp.status === 'Rejected'"
+                  [class.badge-upcoming]="driveApp.status === 'Upcoming Drive'"
+                  [class.badge-notapplied]="driveApp.status === 'Not Applied'"
+                  style="font-size:10px; font-weight:600; padding:4px 10px; border-radius:20px; display:inline-block;">
+                  {{driveApp.status}}
+                </span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noDriveApps>
+            <p style="font-size:12px; color:#9ca3af; font-style:italic;">No campus drives found.</p>
+          </ng-template>
+        </div>
 
       </div>
     </div>
