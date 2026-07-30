@@ -1,0 +1,26 @@
+:host ::ng-deep lib-breadcrumbs-title .flex-col {
+  gap: 8px !important;
+}
+
+:host ::ng-deep lib-tabs {
+  display: block !important;
+  margin-top: 24px !important;
+}
+
+:host ::ng-deep lib-button {
+  display: inline-block;
+  max-width: 100%;
+}
+
+:host ::ng-deep lib-button button {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  :host ::ng-deep lib-button button {
+    padding: 8px 16px !important;
+    min-width: auto !important;
+    font-size: 12px !important;
+  }
+}

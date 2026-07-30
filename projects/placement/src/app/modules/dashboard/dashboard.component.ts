@@ -4,6 +4,7 @@ import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
+import { Breadcrumb } from '@libs/shared-ui';
 
 const extractDataArray = (obj: any): any[] => {
   if (Array.isArray(obj)) return obj;
@@ -60,13 +61,13 @@ class BatchApiService {
 @Component({
   selector: 'app-card',
   template: `
-    <div [class]="'stat-card ' + variant">
-      <div class="stat-icon" [ngClass]="iconClass">
-        <ng-content select="[card-icon]"></ng-content>
+    <div class="stat-card" [ngClass]="variant">
+      <div class="stat-icon" [ngClass]="'bg-' + variant + '-50'">
+        <ng-content></ng-content>
       </div>
       <div class="stat-label">{{ title }}</div>
       <div class="stat-value">
-        {{ value }}
+        <span>{{ value }}</span>
         <span *ngIf="subtitle" class="stat-sub">{{ subtitle }}</span>
       </div>
     </div>
@@ -153,18 +154,38 @@ export class CardComponent {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  dashBreadcrumbs: Breadcrumb[] = [
+    { label: 'Placements' },
+    { label: 'Dashboard' }
+  ];
+
   studentApi: StudentApiService;
   companyApi: CompanyApiService;
   placementApi: PlacementApiService;
   batchApi: BatchApiService;
 
-  academicYears: string[] = ['2022–2023', '2023–2024', '2024–2025', '2025–2026'];
-  selectedAcademicYear = '2025–2026';
+  academicYears: string[] = this.generateAcademicYears();
+  selectedAcademicYear: string = '2025–2026';
+
+  generateAcademicYears(): string[] {
+    const yearsSet = new Set<string>();
+    yearsSet.add('2025–2026');
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth(); // 0-indexed: July = 6
+    const baseYear = currentMonth >= 5 ? currentYear : currentYear - 1;
+    // Past 3 years + Current AY + Next 1 year dynamically
+    for (let y = baseYear - 3; y <= baseYear + 1; y++) {
+      yearsSet.add(`${y}–${y + 1}`);
+    }
+    return Array.from(yearsSet);
+  }
 
   allStudents: any[] = [];
   allCompanies: any[] = [];
   allDrives: any[] = [];
   allApplications: any[] = [];
+
+  loading = true;
 
   chartPoints: any[] = [];
   chartLinePath = '';
@@ -265,6 +286,11 @@ export class DashboardComponent implements OnInit {
             const jobsArray = p.jobs || p.jobs_PlacementDrive_DocumentArray;
             if (jobsArray && Array.isArray(jobsArray)) {
               jobsArray.forEach((j: any) => {
+                const rawClose = p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate || j.closeDate;
+                const activeFlag = j.active !== false && j.active_PlacementDrive_Bool !== false && p.active !== false;
+                const computedSt = this.evaluateDriveStatus(rawClose, activeFlag, p.status);
+                const isOpen = computedSt === 'open';
+
                 flatDrives.push({
                   id: j.jobId || j.jobId_PlacementDrive_Text || p._id || p.id,
                   companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
@@ -272,17 +298,20 @@ export class DashboardComponent implements OnInit {
                   type: j.employmentType || j.employmentType_PlacementDrive_Text || j.type || 'Full-Time',
                   packageCTC: j.packageLpa_PlacementDrive_Text ? `${j.packageLpa_PlacementDrive_Text} LPA` : (j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || '')),
                   location: p.address || j.location || 'Bengaluru, India',
-                  status: j.active === false || j.active_PlacementDrive_Bool === false ? 'Intake Closed' : 'Intake Open',
-                  statusClass: j.active === false || j.active_PlacementDrive_Bool === false ? 'badge-closed' : 'badge-open',
+                  status: isOpen ? 'Intake Open' : 'Intake Closed',
+                  statusClass: isOpen ? 'badge-open' : 'badge-closed',
                   openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.driveStart ? this.formatDate(p.driveStart) : (p.openDate ? this.formatDate(p.openDate) : '')),
-                  closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.driveEnd ? this.formatDate(p.driveEnd) : (p.closeDate ? this.formatDate(p.closeDate) : '')),
+                  closeDate: this.formatDate(rawClose),
                   minimumCgpa: j.minCGPA || j.minCgpa_PlacementDrive_Double || j.minimumCgpa || 6.0,
                   eligibleCourses: j.eligibleBatches_PlacementDrive_TextArray || j.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
                 });
               });
             } else {
-              const statusLower = String(p.status).toLowerCase();
-              const isOpen = statusLower === 'open' || statusLower === 'ongoing' || statusLower === 'upcoming' || statusLower === 'intake open';
+              const rawClose = p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate;
+              const activeFlag = p.active !== false;
+              const computedSt = this.evaluateDriveStatus(rawClose, activeFlag, p.status);
+              const isOpen = computedSt === 'open';
+
               flatDrives.push({
                 id: p._id || p.id,
                 companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
@@ -293,7 +322,7 @@ export class DashboardComponent implements OnInit {
                 status: isOpen ? 'Intake Open' : 'Intake Closed',
                 statusClass: isOpen ? 'badge-open' : 'badge-closed',
                 openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.openDate ? this.formatDate(p.openDate) : ''),
-                closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.closeDate ? this.formatDate(p.closeDate) : ''),
+                closeDate: this.formatDate(rawClose),
                 minimumCgpa: p.minimumCgpa || 6.0,
                 eligibleCourses: p.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
               });
@@ -322,6 +351,17 @@ export class DashboardComponent implements OnInit {
             id: b.batchCode_PlacementBatches_Text || b.batchCode || b.batchId || b._id,
             label: b.batchCode_PlacementBatches_Text || b.batchCode || b.batchName_PlacementBatches_Text || b.batchName
           }));
+
+          // Dynamically merge year ranges from backend batches
+          const set = new Set<string>(this.academicYears);
+          this.BATCH_MASTER.forEach(b => {
+            const match = String(b.label || b.id).match(/\b(20\d{2})\b/);
+            if (match) {
+              const yr = parseInt(match[1], 10);
+              set.add(`${yr}–${yr + 1}`);
+            }
+          });
+          this.academicYears = Array.from(set).sort();
         } else {
           this.BATCH_MASTER = [];
         }
@@ -335,6 +375,7 @@ export class DashboardComponent implements OnInit {
   }
 
   loadStats(): void {
+    this.loading = true;
     forkJoin({
       students: this.studentApi.list(),
       companies: this.companyApi.list(),
@@ -351,6 +392,7 @@ export class DashboardComponent implements OnInit {
           this.COMPANY_MASTER = this.allCompanies.map(c => ({ id: c.companyCode_PlacementCompany_Text || c._id || c.id || c.COMPANY_CODE || c.name, name: c.COMPANY_NAME || c.companyName_PlacementCompany_Text || c.companyName || c.name || '', industry: c.INDUSTRY || c.industry_PlacementCompany_Text || c.industry || '' }));
         }
         this.calculateStats();
+        this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -358,13 +400,14 @@ export class DashboardComponent implements OnInit {
         this.allApplications = [];
         this.COMPANY_MASTER = [];
         this.calculateStats();
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });
   }
 
   calculateStats(): void {
-    if (this.selectedAcademicYear !== '2025–2026') {
+    if (!this.selectedAcademicYear.includes('2025') || !this.selectedAcademicYear.includes('2026')) {
       this.stats = {
         optedInStudents: 0,
         drivesThisYear: 0,
@@ -633,6 +676,11 @@ export class DashboardComponent implements OnInit {
         const jobsArray = p.jobs || p.jobs_PlacementDrive_DocumentArray;
         if (jobsArray && Array.isArray(jobsArray)) {
           jobsArray.forEach((j: any) => {
+            const rawClose = p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate || j.closeDate;
+            const isJobActive = j.active !== false && j.active_PlacementDrive_Bool !== false;
+            const computedSt = this.evaluateDriveStatus(rawClose, isJobActive, p.status);
+            const isOpen = computedSt === 'open';
+
             flatDrives.push({
               id: j.jobId || j.jobId_PlacementDrive_Text || p._id || p.id,
               companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
@@ -640,17 +688,19 @@ export class DashboardComponent implements OnInit {
               type: j.employmentType || j.employmentType_PlacementDrive_Text || j.type || 'Full-Time',
               packageCTC: j.packageLpa_PlacementDrive_Text ? `${j.packageLpa_PlacementDrive_Text} LPA` : (j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || '')),
               location: p.address || j.location || 'Bengaluru, India',
-              status: j.active === false || j.active_PlacementDrive_Bool === false ? 'Intake Closed' : 'Intake Open',
-              statusClass: j.active === false || j.active_PlacementDrive_Bool === false ? 'badge-closed' : 'badge-open',
+              status: isOpen ? 'Intake Open' : 'Intake Closed',
+              statusClass: isOpen ? 'badge-open' : 'badge-closed',
               openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.driveStart ? this.formatDate(p.driveStart) : (p.openDate ? this.formatDate(p.openDate) : '')),
-              closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.driveEnd ? this.formatDate(p.driveEnd) : (p.closeDate ? this.formatDate(p.closeDate) : '')),
+              closeDate: this.formatDate(rawClose),
               minimumCgpa: j.minCGPA || j.minCgpa_PlacementDrive_Double || j.minimumCgpa || 6.0,
               eligibleCourses: j.eligibleBatches_PlacementDrive_TextArray || j.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
             });
           });
         } else {
-          const statusLower = String(p.status).toLowerCase();
-          const isOpen = statusLower === 'open' || statusLower === 'ongoing' || statusLower === 'upcoming' || statusLower === 'intake open';
+          const rawClose = p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate;
+          const computedSt = this.evaluateDriveStatus(rawClose, true, p.status);
+          const isOpen = computedSt === 'open';
+
           flatDrives.push({
             id: p._id || p.id,
             companyName: p.companyName || p.companyName_PlacementDrive_Text || '',
@@ -661,7 +711,7 @@ export class DashboardComponent implements OnInit {
             status: isOpen ? 'Intake Open' : 'Intake Closed',
             statusClass: isOpen ? 'badge-open' : 'badge-closed',
             openDate: p.driveStart_PlacementDrive_Date ? this.formatDate(p.driveStart_PlacementDrive_Date) : (p.openDate ? this.formatDate(p.openDate) : ''),
-            closeDate: p.driveEnd_PlacementDrive_Date ? this.formatDate(p.driveEnd_PlacementDrive_Date) : (p.closeDate ? this.formatDate(p.closeDate) : ''),
+            closeDate: this.formatDate(rawClose),
             minimumCgpa: p.minimumCgpa || 6.0,
             eligibleCourses: p.eligibleCourses || ['B.Tech CSE', 'M.Tech CSE', 'MCA']
           });
@@ -1092,6 +1142,56 @@ export class DashboardComponent implements OnInit {
     this.reportsOpen = false;
   }
 
+  evaluateDriveStatus(closeDateRaw: any, activeFlag?: boolean, rawStatus?: string): 'open' | 'closed' | 'results' {
+    if (activeFlag === false || rawStatus === 'closed' || rawStatus === 'Intake Closed') {
+      return 'closed';
+    }
+    if (rawStatus === 'results' || rawStatus === 'Results Declared') {
+      return 'results';
+    }
+    if (!closeDateRaw) {
+      return 'open';
+    }
+
+    let closeDateObj: Date | null = null;
+    if (closeDateRaw instanceof Date) {
+      closeDateObj = closeDateRaw;
+    } else if (typeof closeDateRaw === 'string') {
+      const str = closeDateRaw.trim();
+      if (!str) return 'open';
+
+      const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const day = parseInt(ddmmyyyyMatch[1], 10);
+        const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
+        const year = parseInt(ddmmyyyyMatch[3], 10);
+        closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+      } else {
+        const yyyymmddMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (yyyymmddMatch) {
+          const year = parseInt(yyyymmddMatch[1], 10);
+          const month = parseInt(yyyymmddMatch[2], 10) - 1;
+          const day = parseInt(yyyymmddMatch[3], 10);
+          closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+        } else {
+          const parsed = new Date(str);
+          if (!isNaN(parsed.getTime())) {
+            closeDateObj = parsed;
+          }
+        }
+      }
+    }
+
+    if (closeDateObj && !isNaN(closeDateObj.getTime())) {
+      const now = new Date();
+      if (closeDateObj.getTime() < now.getTime()) {
+        return 'closed';
+      }
+    }
+
+    return 'open';
+  }
+
   // ── RECRUITMENT WIZARD METHODS ──
   openWizard(): void {
     this.resetWizard();
@@ -1107,6 +1207,7 @@ export class DashboardComponent implements OnInit {
     this.cid = 1;
     this.companies = [{ id: this.cid, masterId: '', name: '', industry: '' }];
     this.jobs = { [this.cid]: [] };
+    this.addJob(this.cid);
     this.batchDates = {};
   }
 
@@ -1199,7 +1300,9 @@ export class DashboardComponent implements OnInit {
       this.step++;
       if (this.step === 2) {
         this.companies.forEach(c => {
-          if (!this.jobs[c.id]) this.jobs[c.id] = [];
+          if (!this.jobs[c.id] || this.jobs[c.id].length === 0) {
+            this.addJob(c.id);
+          }
         });
       } else if (this.step === 3) {
         this.companies.forEach(c => {
@@ -1220,6 +1323,8 @@ export class DashboardComponent implements OnInit {
   prevStep(): void {
     if (this.step > 1) {
       this.step--;
+    } else {
+      this.closeWizard();
     }
   }
 

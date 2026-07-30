@@ -5,6 +5,7 @@ import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
+import { Breadcrumb } from '@libs/shared-ui';
 
 const extractDataArray = (obj: any): any[] => {
   if (Array.isArray(obj)) return obj;
@@ -123,6 +124,7 @@ export class DrivesComponent implements OnInit {
   studentApi: StudentApiService;
 
   drives: PlacementDrive[] = [];
+  loading = true;
 
   candidates: CandidateView[] = [];
 
@@ -136,6 +138,19 @@ export class DrivesComponent implements OnInit {
   currentSubpage: 'list' | 'candidates' = 'list';
   activeDrive: PlacementDrive | null = null;
   selectedCandidateIds = new Set<string>();
+
+  listBreadcrumbs: Breadcrumb[] = [
+    { label: 'Placements' },
+    { label: 'Drives' }
+  ];
+
+  getCandidatesBreadcrumbs(): Breadcrumb[] {
+    return [
+      { label: 'Placements' },
+      { label: 'Drives', callback: () => this.showDrivesSubpage('list') },
+      { label: this.activeDrive ? `${this.activeDrive.companyName} Applicants` : 'Applicants' }
+    ];
+  }
 
   // Create Modal bindings
   showCreateModal = false;
@@ -374,6 +389,56 @@ export class DrivesComponent implements OnInit {
     'IN_PROGRESS': 'In Progress — Rounds Ongoing'
   };
 
+  evaluateDriveStatus(closeDateRaw: any, activeFlag?: boolean, rawStatus?: string): 'open' | 'closed' | 'results' {
+    if (activeFlag === false || rawStatus === 'closed' || rawStatus === 'Intake Closed') {
+      return 'closed';
+    }
+    if (rawStatus === 'results' || rawStatus === 'Results Declared') {
+      return 'results';
+    }
+    if (!closeDateRaw) {
+      return 'open';
+    }
+
+    let closeDateObj: Date | null = null;
+    if (closeDateRaw instanceof Date) {
+      closeDateObj = closeDateRaw;
+    } else if (typeof closeDateRaw === 'string') {
+      const str = closeDateRaw.trim();
+      if (!str) return 'open';
+
+      const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const day = parseInt(ddmmyyyyMatch[1], 10);
+        const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
+        const year = parseInt(ddmmyyyyMatch[3], 10);
+        closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+      } else {
+        const yyyymmddMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (yyyymmddMatch) {
+          const year = parseInt(yyyymmddMatch[1], 10);
+          const month = parseInt(yyyymmddMatch[2], 10) - 1;
+          const day = parseInt(yyyymmddMatch[3], 10);
+          closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+        } else {
+          const parsed = new Date(str);
+          if (!isNaN(parsed.getTime())) {
+            closeDateObj = parsed;
+          }
+        }
+      }
+    }
+
+    if (closeDateObj && !isNaN(closeDateObj.getTime())) {
+      const now = new Date();
+      if (closeDateObj.getTime() < now.getTime()) {
+        return 'closed';
+      }
+    }
+
+    return 'open';
+  }
+
   constructor(
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
@@ -420,6 +485,7 @@ export class DrivesComponent implements OnInit {
   }
 
   loadDrives(query?: string): void {
+    this.loading = true;
     forkJoin({
       drives: this.placementApi.listDrives(query),
       apps: this.http.get<any[]>(environment.baseUrl + '/placements-app/list-applications')
@@ -436,6 +502,9 @@ export class DrivesComponent implements OnInit {
               jobsArray.forEach((j: any) => {
                 const actualJobId = j.jobId_PlacementDrive_Text || j.jobId;
                 const count = appsList.filter((a: any) => a.jobId === actualJobId || a.jobId_PlacementAppilcation_Text === actualJobId).length;
+                const closeDtRaw = p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate || j.closeDate;
+                const isJobActive = j.active_PlacementDrive_Bool !== false && j.active !== false;
+                const computedStatus = this.evaluateDriveStatus(closeDtRaw, isJobActive, p.status);
                 flatDrives.push({
                   id: actualJobId || p._id || p.id,
                   placementId: p._id || p.id,
@@ -444,9 +513,9 @@ export class DrivesComponent implements OnInit {
                   type: j.employmentType_PlacementDrive_Text || j.employmentType || j.type || 'Full-Time',
                   packageCTC: j.packageLpa_PlacementDrive_Text ? `${j.packageLpa_PlacementDrive_Text} LPA` : (j.packageLPA ? `${j.packageLPA} LPA` : (j.packageCTC || '')),
                   location: p.address || j.location || 'Bengaluru, India',
-                  status: (j.active_PlacementDrive_Bool === false || j.active === false) ? 'closed' : 'open',
+                  status: computedStatus,
                   openDate: this.formatDate(p.driveStart_PlacementDrive_Date || p.driveStart || p.openDate),
-                  closeDate: this.formatDate(p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate),
+                  closeDate: this.formatDate(closeDtRaw),
                   minimumCgpa: j.minCgpa_PlacementDrive_Double || j.minCGPA || j.minimumCgpa || 6.0,
                   applicationsCount: count,
                   rawDrive: p,
@@ -455,6 +524,8 @@ export class DrivesComponent implements OnInit {
               });
             } else {
               const count = appsList.filter((a: any) => a.placementId === p._id || a.placementId_PlacementAppilcation_Text === p._id).length;
+              const closeDtRaw = p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate;
+              const computedStatus = this.evaluateDriveStatus(closeDtRaw, true, p.status);
               flatDrives.push({
                 id: p._id || p.id,
                 placementId: p._id || p.id,
@@ -463,9 +534,9 @@ export class DrivesComponent implements OnInit {
                 type: p.type || 'Full-Time',
                 packageCTC: p.packageCTC || '',
                 location: p.location || 'Bengaluru, India',
-                status: p.status || 'open',
+                status: computedStatus,
                 openDate: this.formatDate(p.driveStart_PlacementDrive_Date || p.driveStart || p.openDate),
-                closeDate: this.formatDate(p.driveEnd_PlacementDrive_Date || p.driveEnd || p.closeDate),
+                closeDate: this.formatDate(closeDtRaw),
                 minimumCgpa: p.minimumCgpa || 6.0,
                 applicationsCount: count,
                 rawDrive: p,
@@ -484,11 +555,13 @@ export class DrivesComponent implements OnInit {
           this.drives = flatDrives;
           this.filter();
         }
+        this.loading = false;
         this.cdr.detectChanges();
       },
       error: () => {
         console.log('Error loading drives');
         this.filter();
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });
@@ -845,8 +918,8 @@ export class DrivesComponent implements OnInit {
     this.editingDrive = null;
   }
 
-  submitEditDrive(event: Event): void {
-    event.preventDefault();
+  submitEditDrive(event?: Event): void {
+    if (event) event.preventDefault();
     if (!this.editingDrive) return;
 
     const jobId = this.editingDrive.id;

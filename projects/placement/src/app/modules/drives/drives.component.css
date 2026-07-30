@@ -20,6 +20,28 @@
   background: #d1d5db;
 }
 
+:host ::ng-deep lib-breadcrumbs-title .flex-col {
+  gap: 8px !important;
+}
+
+:host ::ng-deep lib-button {
+  display: inline-block;
+  max-width: 100%;
+}
+
+:host ::ng-deep lib-button button {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  :host ::ng-deep lib-button button {
+    padding: 8px 16px !important;
+    min-width: auto !important;
+    font-size: 12px !important;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -528,3 +550,17 @@ td {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Skeleton Loading Animation & Utility Styles */
+@keyframes skelPulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+.skel {
+  background: #e2e8f0;
+  border-radius: 6px;
+  animation: skelPulse 1.5s ease-in-out infinite;
+}
+

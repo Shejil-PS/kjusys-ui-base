@@ -1,28 +1,33 @@
+<!-- BREADCRUMBS OUTSIDE MAIN CONTENT -->
+<div class="px-6 pt-4" *ngIf="currentSubpage === 'list'">
+  <lib-breadcrumbs-title [breadcrumbs]="listBreadcrumbs" title="Drives"></lib-breadcrumbs-title>
+</div>
+<div class="px-6 pt-4" *ngIf="currentSubpage === 'candidates'">
+  <lib-breadcrumbs-title [breadcrumbs]="getCandidatesBreadcrumbs()" title="Drives"></lib-breadcrumbs-title>
+</div>
+
 <!-- MAIN CONTAINER -->
-<div class="px-6 pb-5" style="padding-top: 30px; box-sizing: border-box;">
+<div class="px-6 pb-5 mt-2" style="margin-left: 24px; margin-right: 24px; margin-bottom: 24px; box-sizing: border-box;">
 
   <!-- SUB-PAGE: Drives List -->
   <div *ngIf="currentSubpage === 'list'" class="drives-subpage active">
-    <div class="flex items-end justify-between" style="margin-bottom: 28px;">
-      <div>
-        <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#989898; margin-bottom:4px;">
-          Placements / <span style="color:#111827; font-weight:700;">Drives</span>
-        </div>
-        <h1 style="font-family:'DM Sans',sans-serif; font-size:12px; font-weight:400; color:#000;">Drives</h1>
-      </div>
-    </div>
 
     <!-- Drives Card -->
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-      <div class="p-4 border-b border-gray-100">
-        <div class="relative w-full flex items-center">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" fill="none"
-            stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input type="text" placeholder="Search by company or role..." class="input-search" [(ngModel)]="searchQuery"
-            (keyup.enter)="onSearchInput()" />
+      <div class="p-4 border-b border-gray-100 flex items-center">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 320px; border-radius: 9999px; border: 2px solid #155DFC; padding: 2px; background: #ffffff; box-sizing: border-box;">
+          <input type="text" placeholder="Search by company or role..."
+            style="flex: 1 1 0%; min-width: 0; border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; padding-left: 16px; padding-right: 8px; height: 32px; font-size: 12px; color: #374151;"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()" (keyup.enter)="onSearchInput()" />
+          <button type="button" (click)="onSearchInput()"
+            style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 9999px; background-color: #155DFC; color: #ffffff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; padding: 0;"
+            aria-label="Search">
+            <svg style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: block; stroke: #ffffff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.5" y2="16.5" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -45,15 +50,26 @@
             </tr>
           </thead>
           <tbody>
+            <ng-container *ngIf="loading; else drivesLoaded">
+              <tr *ngFor="let i of [1,2,3,4,5]" class="border-b border-gray-100">
+                <td class="px-5 py-3"><div class="skel w-32 h-4 rounded mb-1"></div><div class="skel w-20 h-3 rounded"></div></td>
+                <td class="px-5 py-3"><div class="skel w-24 h-4 rounded mb-1"></div><div class="skel w-16 h-3 rounded"></div></td>
+                <td class="px-5 py-3.5"><div class="skel w-20 h-5 rounded-full"></div></td>
+                <td class="px-5 py-3.5"><div class="skel w-8 h-4 rounded"></div></td>
+                <td class="px-5 py-3.5"><div class="skel w-28 h-3 rounded mb-1"></div><div class="skel w-28 h-3 rounded"></div></td>
+                <td class="px-5 py-3.5"><div class="flex items-center gap-2"><div class="skel w-20 h-7 rounded-lg"></div><div class="skel w-20 h-7 rounded-lg"></div></div></td>
+              </tr>
+            </ng-container>
+            <ng-template #drivesLoaded>
             <tr *ngFor="let d of getPaginatedDrives()"
               class="table-row border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-              <td class="px-5 py-3.5">
-                <p class="td-primary text-sm font-semibold text-gray-800">{{ d.companyName }}</p>
-                <p class="td-secondary text-xs text-gray-400">{{ d.role }} • {{ d.type }}</p>
+              <td class="px-5 py-3">
+                <p class="td-primary text-xs font-semibold text-gray-800">{{ d.companyName }}</p>
+                <p class="td-secondary text-[11px] text-gray-400">{{ d.role }} • {{ d.type }}</p>
               </td>
-              <td class="px-5 py-3.5">
-                <p class="td-primary text-sm font-semibold text-gray-800">{{ d.packageCTC }}</p>
-                <p class="td-secondary text-xs text-gray-400">{{ d.location }}</p>
+              <td class="px-5 py-3">
+                <p class="td-primary text-xs font-semibold text-gray-800">{{ d.packageCTC }}</p>
+                <p class="td-secondary text-[11px] text-gray-400">{{ d.location }}</p>
               </td>
               <td class="px-5 py-3.5">
                 <span class="badge" [ngClass]="'status-' + d.status">
@@ -88,6 +104,7 @@
                 </div>
               </td>
             </tr>
+            </ng-template>
           </tbody>
         </table>
       </div>
@@ -126,15 +143,6 @@
 
   <!-- SUB-PAGE: Candidates -->
   <div *ngIf="currentSubpage === 'candidates'" class="drives-subpage active">
-    <div class="flex items-end justify-between" style="margin-bottom: 28px;">
-      <div>
-        <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#989898; margin-bottom:4px;">
-          Placements / <span class="cursor-pointer hover:underline" (click)="showDrivesSubpage('list')">Drives</span> /
-          <span style="color:#111827; font-weight:700;">{{ activeDrive?.companyName }}</span>
-        </div>
-        <h1 style="font-family:'DM Sans',sans-serif; font-size:12px; font-weight:400; color:#000;">Drives</h1>
-      </div>
-    </div>
 
     <!-- Candidates Header Summary Card -->
     <div
@@ -152,47 +160,28 @@
         </p>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
-        <button (click)="openBulkUpdateModal()"
-          class="btn-outline flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-gray-300">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          Bulk Update
-        </button>
-        <button (click)="openExportModal()"
-          class="btn-outline flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-gray-300">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Export Tracker
-        </button>
-        <button (click)="openSendEmailModal()"
-          class="btn-outline flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-gray-300">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
-          Send Email
-        </button>
+        <lib-button label="Bulk Update" type="secondary" [disabled]="selectedCandidateIds.size === 0" (onClick)="openBulkUpdateModal()"></lib-button>
+        <lib-button label="Export Tracker" type="secondary" [disabled]="selectedCandidateIds.size === 0" (onClick)="openExportModal()"></lib-button>
+        <lib-button label="Send Email" type="secondary" [disabled]="selectedCandidateIds.size === 0" (onClick)="openSendEmailModal()"></lib-button>
       </div>
     </div>
 
     <!-- Candidates Table Card -->
     <div class="mb-10 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-      <div class="p-4 border-b border-gray-100">
-        <div class="relative w-full flex items-center">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" fill="none"
-            stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input type="text" placeholder="Search applicants by name..." class="input-search"
+      <div class="p-4 border-b border-gray-100 flex items-center">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 320px; border-radius: 9999px; border: 2px solid #155DFC; padding: 2px; background: #ffffff; box-sizing: border-box;">
+          <input type="text" placeholder="Search applicants by name..."
+            style="flex: 1 1 0%; min-width: 0; border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; padding-left: 16px; padding-right: 8px; height: 32px; font-size: 12px; color: #374151;"
             [ngModel]="candidateSearchQuery" (ngModelChange)="filterCandidates($event || '')"
-            (keyup.enter)="onCandidateSearchInput()" />
+            (input)="onCandidateSearchInput()" (keyup.enter)="onCandidateSearchInput()" />
+          <button type="button" (click)="onCandidateSearchInput()"
+            style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 9999px; background-color: #155DFC; color: #ffffff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; padding: 0;"
+            aria-label="Search">
+            <svg style="width: 16px; height: 16px; min-width: 16px; min-height: 16px; display: block; stroke: #ffffff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.5" y2="16.5" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -234,8 +223,8 @@
               </td>
               <td class="px-4 py-3.5 font-semibold text-gray-400 text-xs">{{ i + 1 }}</td>
               <td class="px-5 py-3.5">
-                <p class="text-sm font-semibold text-gray-800">{{ c.name }}</p>
-                <p class="text-xs text-gray-400">Applied: {{ c.applied }}</p>
+                <p class="text-xs font-semibold text-gray-800">{{ c.name }}</p>
+                <p class="text-[11px] text-gray-400">Applied: {{ c.applied }}</p>
               </td>
               <td class="px-5 py-3.5 text-xs text-gray-600">{{ c.reg }}</td>
               <td class="px-5 py-3.5 text-xs text-gray-600 max-w-[160px] truncate" [title]="c.course">{{ c.course }}
@@ -334,12 +323,12 @@
       <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
         <div>
           <label class="form-label block mb-1 text-gray-600 font-medium">Company Name</label>
-          <input type="text" placeholder="e.g. Microsoft" required [(ngModel)]="createCompany" name="company"
+          <input type="text" placeholder="Enter company name" required [(ngModel)]="createCompany" name="company"
             class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
         </div>
         <div>
           <label class="form-label block mb-1 text-gray-600 font-medium">Role</label>
-          <input type="text" placeholder="e.g. SDE" required [(ngModel)]="createRole" name="role"
+          <input type="text" placeholder="Enter job role" required [(ngModel)]="createRole" name="role"
             class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
         </div>
       </div>
@@ -355,13 +344,13 @@
         </div>
         <div>
           <label class="form-label block mb-1 text-gray-600 font-medium">Package</label>
-          <input type="text" placeholder="e.g. 20 LPA" required [(ngModel)]="createPackage" name="package"
+          <input type="text" placeholder="Enter package/CTC" required [(ngModel)]="createPackage" name="package"
             class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
         </div>
       </div>
       <div>
         <label class="form-label block mb-1 text-gray-600 font-medium">Location</label>
-        <input type="text" placeholder="e.g. Bengaluru, India / Remote" [(ngModel)]="createLocation" name="location"
+        <input type="text" placeholder="Enter location" [(ngModel)]="createLocation" name="location"
           class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
       </div>
       <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
@@ -390,70 +379,67 @@
 <!-- =====================================================
      MODAL: Edit Drive Details
  ====================================================== -->
-<div *ngIf="showEditModal"
-  class="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center backdrop-blur-[1px]">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-gray-100">
-    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-      <h2 class="text-sm font-semibold text-gray-900">Edit Drive Details</h2>
-      <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
+<div *ngIf="showEditModal" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[900] flex items-center justify-center">
+  <div class="bg-white rounded-xl shadow-xl overflow-hidden" style="width: 600px; max-width: 95vw;">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-bold text-gray-800">Edit Drive Details</h2>
+      <button (click)="closeEditModal()" class="text-xl text-gray-400 hover:text-gray-700">×</button>
     </div>
-    <form class="px-6 py-5 space-y-4 text-xs" (submit)="submitEditDrive($event)">
-      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
-        <div>
-          <label class="form-label block mb-1 text-gray-600 font-medium">Company Name</label>
-          <input type="text" required [(ngModel)]="editCompany" name="company"
-            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+    <form (submit)="submitEditDrive($event)">
+      <div class="p-5 flex flex-col gap-4 text-xs">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Company Name <span class="text-red-500">*</span></label>
+            <input type="text" required [(ngModel)]="editCompany" name="company" placeholder="Enter company name"
+              class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Role <span class="text-red-500">*</span></label>
+            <input type="text" required [(ngModel)]="editRole" name="role" placeholder="Enter job role"
+              class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
+          </div>
         </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Type</label>
+            <select [(ngModel)]="editType" name="type"
+              class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500 bg-white">
+              <option>Full-Time</option>
+              <option>Internship</option>
+              <option>Part-Time</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Package</label>
+            <input type="text" required [(ngModel)]="editPackage" name="package" placeholder="Enter package (e.g. 6 LPA)"
+              class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Opens</label>
+            <input type="date" [(ngModel)]="editOpens" name="opens"
+              class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Closes</label>
+            <input type="date" [(ngModel)]="editCloses" name="closes"
+              class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
         <div>
-          <label class="form-label block mb-1 text-gray-600 font-medium">Role</label>
-          <input type="text" required [(ngModel)]="editRole" name="role"
-            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase">Location</label>
+          <input type="text" [(ngModel)]="editLocation" name="location" placeholder="Enter location"
+            class="w-full h-9 border border-gray-300 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
         </div>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
-        <div>
-          <label class="form-label block mb-1 text-gray-600 font-medium">Type</label>
-          <select [(ngModel)]="editType" name="type"
-            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400">
-            <option>Full-Time</option>
-            <option>Internship</option>
-            <option>Part-Time</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label block mb-1 text-gray-600 font-medium">Package</label>
-          <input type="text" required [(ngModel)]="editPackage" name="package"
-            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
-        </div>
-      </div>
-      <div>
-        <label class="form-label block mb-1 text-gray-600 font-medium">Location</label>
-        <input type="text" [(ngModel)]="editLocation" name="location"
-          class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
-        <div>
-          <label class="form-label block mb-1 text-gray-600 font-medium">Opens</label>
-          <input type="date" [(ngModel)]="editOpens" name="opens"
-            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
-        </div>
-        <div>
-          <label class="form-label block mb-1 text-gray-600 font-medium">Closes</label>
-          <input type="date" [(ngModel)]="editCloses" name="closes"
-            class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-4 pb-4 border-t border-gray-100">
-        <button type="button" (click)="closeEditModal()"
-          class="btn-outline px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium">Cancel</button>
-        <button type="submit"
-          class="btn-primary bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Save
-          Changes</button>
+
+      <div class="modal-footer flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-gray-100 bg-gray-50">
+        <lib-button label="Cancel" type="secondary" (onClick)="closeEditModal()"></lib-button>
+        <lib-button label="Save Changes" type="primary" (onClick)="submitEditDrive()"></lib-button>
       </div>
     </form>
   </div>
@@ -726,13 +712,13 @@
 
       <div class="modal-field space-y-1">
         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
-        <input type="text" [(ngModel)]="emailSubject" placeholder="e.g. Interview Schedule for Apple Drive"
+        <input type="text" [(ngModel)]="emailSubject" placeholder="Enter email subject"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
       </div>
 
       <div class="modal-field space-y-1">
         <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Message</label>
-        <textarea [(ngModel)]="emailMessage" rows="4" placeholder="Write your message here..."
+        <textarea [(ngModel)]="emailMessage" rows="4" placeholder="Enter your email message"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none"></textarea>
       </div>
 
@@ -825,7 +811,7 @@
         <p class="font-semibold text-gray-800 text-[11px]">Save Custom Template</p>
         <input type="text" [(ngModel)]="customTemplateName"
           class="save-template-input w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-          placeholder="e.g. Finance Batch Export" />
+          placeholder="Enter template name" />
         <button (click)="saveCustomTemplate()"
           class="btn-primary w-full justify-center flex items-center gap-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

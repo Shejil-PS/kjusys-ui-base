@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 
 import { DashboardModuleRoutingModule } from './dashboard-routing.module';
 import { DashboardComponent, CardComponent } from './dashboard.component';
-
+import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
+import { DropdownLibModule } from '@libs/dropdown-lib';
 
 @NgModule({
   declarations: [
@@ -14,7 +15,10 @@ import { DashboardComponent, CardComponent } from './dashboard.component';
   imports: [
     CommonModule,
     FormsModule,
-    DashboardModuleRoutingModule
+    DashboardModuleRoutingModule,
+    BreadcrumbsTitleComponent,
+    ButtonComponent,
+    DropdownLibModule
   ]
 })
 export class DashboardModule { }

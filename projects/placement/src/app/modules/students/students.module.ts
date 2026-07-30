@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { StudentsModuleRoutingModule } from './students-routing.module';
 import { StudentsComponent } from './students.component';
+import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
 
 
 @NgModule({
@@ -13,7 +14,9 @@ import { StudentsComponent } from './students.component';
   imports: [
     CommonModule,
     FormsModule,
-    StudentsModuleRoutingModule
+    StudentsModuleRoutingModule,
+    BreadcrumbsTitleComponent,
+    ButtonComponent
   ]
 })
 export class StudentsModule { }

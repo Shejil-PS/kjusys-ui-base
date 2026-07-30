@@ -1,11 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, forkJoin, Subject } from 'rxjs';
 import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
+import { Breadcrumb } from '@libs/shared-ui';
 
 // ── CUSTOM STUDENT MODEL ──
 export interface Student {
@@ -209,6 +210,7 @@ export class StudentsComponent implements OnInit {
   showDrivesDropdown = false;
 
   students: Student[] = [];
+  loading = true;
 
   filteredStudents: Student[] = [];
   searchQuery = '';
@@ -300,9 +302,23 @@ export class StudentsComponent implements OnInit {
     return arr;
   }
 
+  listBreadcrumbs: Breadcrumb[] = [
+    { label: 'Placements' },
+    { label: 'Students' }
+  ];
+
+  getProfileBreadcrumbs(): Breadcrumb[] {
+    return [
+      { label: 'Placements' },
+      { label: 'Students', callback: () => { this.clearProfile(); this.router.navigate(['/kjusys/students']); } },
+      { label: this.student?.name || 'Student Detail' }
+    ];
+  }
+
   constructor(
     private http: HttpClient,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
     private toastService: SharedToastService
   ) {
@@ -371,6 +387,7 @@ export class StudentsComponent implements OnInit {
   }
 
   loadStudents(query?: string): void {
+    this.loading = true;
     this.studentApi.list(query).subscribe({
       next: (res: Student[]) => {
         this.students = res || [];
@@ -382,11 +399,13 @@ export class StudentsComponent implements OnInit {
           }
         });
         this.filter();
+        this.loading = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.students = [];
         this.filter();
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });

@@ -20,6 +20,28 @@
   background: #d1d5db;
 }
 
+:host ::ng-deep lib-breadcrumbs-title .flex-col {
+  gap: 8px !important;
+}
+
+:host ::ng-deep lib-button {
+  display: inline-block;
+  max-width: 100%;
+}
+
+:host ::ng-deep lib-button button {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  :host ::ng-deep lib-button button {
+    padding: 8px 16px !important;
+    min-width: auto !important;
+    font-size: 12px !important;
+  }
+}
+
 .company-icon {
   width: 34px;
   height: 34px;
@@ -71,9 +93,9 @@
   transition: all .12s;
 }
 .action-btn:hover {
-  background: #f3f4f7;
-  color: #2563eb;
-  border-color: #2563eb;
+  background: #fff7ed;
+  color: #f97316;
+  border-color: #fdba74;
 }
 
 .action-btn-danger {
@@ -167,3 +189,17 @@
     justify-content: center;
   }
 }
+
+/* Skeleton Loading Animation & Utility Styles */
+@keyframes skelPulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+.skel {
+  background: #e2e8f0;
+  border-radius: 6px;
+  animation: skelPulse 1.5s ease-in-out infinite;
+}
+

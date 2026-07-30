@@ -1,10 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
 import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { SharedToastService } from '@libs/shared-toast';
 import { environment } from '../../../environments/environment';
+import { Breadcrumb } from '@libs/shared-ui';
 
 // ── CUSTOM INLINE MODELS ──
 export interface Company {
@@ -132,9 +133,24 @@ export class CompaniesComponent implements OnInit {
   company: Company | null = null;
 
   companies: Company[] = [];
+  loading = true;
 
   filteredCompanies: Company[] = [];
   searchQuery = '';
+
+  // Breadcrumbs
+  listBreadcrumbs: Breadcrumb[] = [
+    { label: 'Placements' },
+    { label: 'Companies' }
+  ];
+
+  getProfileBreadcrumbs(): Breadcrumb[] {
+    return [
+      { label: 'Placements' },
+      { label: 'Companies', callback: () => this.router.navigate(['/kjusys/companies']) },
+      { label: this.company?.name || 'Profile' }
+    ];
+  }
   searchSubject = new Subject<string>();
   showModal = false;
   editingId: string | null = null;
@@ -209,6 +225,7 @@ export class CompaniesComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
     private toastService: SharedToastService
   ) {
@@ -246,6 +263,7 @@ export class CompaniesComponent implements OnInit {
   }
 
   loadCompanies(query?: string): void {
+    this.loading = true;
     this.companyApi.list(query).subscribe({
       next: (res: Company[]) => {
         if (res && res.length > 0) {
@@ -255,12 +273,14 @@ export class CompaniesComponent implements OnInit {
           this.companies = [];
           this.filter();
         }
+        this.loading = false;
         this.cdr.detectChanges();
       },
       error: () => {
         console.log('Error loading companies');
         this.companies = [];
         this.filter();
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });

@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { TabItem } from '@libs/tabs';
+import { Breadcrumb } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-settings',
@@ -19,6 +20,11 @@ export class SettingsComponent implements OnInit {
   tabs: TabItem[] = [
     { id: 'declaration', label: 'Declaration Form', subtitle: 'Upload & view T&Cs' },
     { id: 'general', label: 'General', subtitle: 'System preferences' }
+  ];
+
+  breadcrumbs: Breadcrumb[] = [
+    { label: 'Placements' },
+    { label: 'Settings' }
   ];
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
@@ -47,6 +53,12 @@ export class SettingsComponent implements OnInit {
       this.selectedFileName = file.name;
       this.cdr.detectChanges();
     }
+  }
+
+  onLibFileChange(file: File | null): void {
+    this.selectedFile = file;
+    this.selectedFileName = file ? file.name : '';
+    this.cdr.detectChanges();
   }
 
   updateDeclaration(): void {

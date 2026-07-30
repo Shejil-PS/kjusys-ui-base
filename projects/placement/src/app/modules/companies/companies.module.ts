@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { CompaniesModuleRoutingModule } from './companies-routing.module';
 import { CompaniesComponent } from './companies.component';
+import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
 
 
 @NgModule({
@@ -13,7 +14,9 @@ import { CompaniesComponent } from './companies.component';
   imports: [
     CommonModule,
     FormsModule,
-    CompaniesModuleRoutingModule
+    CompaniesModuleRoutingModule,
+    BreadcrumbsTitleComponent,
+    ButtonComponent
   ]
 })
 export class CompaniesModule { }

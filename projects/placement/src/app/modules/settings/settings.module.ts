@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { SettingsModuleRoutingModule } from './settings-routing.module';
 import { SettingsComponent } from './settings.component';
 
-
 import { TabsModule } from '@libs/tabs';
+import { BreadcrumbsTitleComponent, ButtonComponent, FileUploadComponent } from '@libs/shared-ui';
 
 @NgModule({
   declarations: [
@@ -16,7 +16,10 @@ import { TabsModule } from '@libs/tabs';
     CommonModule,
     SettingsModuleRoutingModule,
     FormsModule,
-    TabsModule
+    TabsModule,
+    BreadcrumbsTitleComponent,
+    ButtonComponent,
+    FileUploadComponent
   ]
 })
 export class SettingsModule { }
