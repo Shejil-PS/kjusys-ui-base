@@ -1,0 +1,1079 @@
+<ng-container *ngIf="profile$ | async as profile">
+  <ng-container *ngIf="profile.optedInStatus === 'opted_in'">
+
+
+    <!-- BREADCRUMBS OUTSIDE MAIN CONTENT -->
+    <div class="px-6 pt-4" *ngIf="!(isProfileModalOpen$ | async)">
+      <lib-breadcrumbs-title [breadcrumbs]="dashBreadcrumbs" title="Dashboard"></lib-breadcrumbs-title>
+    </div>
+
+    <!-- MAIN CONTAINER WITH 24px MARGIN -->
+    <div class="px-6 pb-5 mt-2" style="margin-left: 24px; margin-right: 24px; margin-bottom: 24px; box-sizing: border-box;" *ngIf="!(isProfileModalOpen$ | async)">
+      <main class="page-main">
+        <!-- Action Row One Line Below -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%; margin-top: 8px; margin-bottom: 24px;">
+          <lib-button label="Edit Profile" type="primary" customClass="px-8 min-w-[140px] shrink-0" (onClick)="openEditProfile()"></lib-button>
+        </div>
+
+        <!-- MAIN TWO-COLUMN LAYOUT -->
+        <div class="dashboard-page-grid">
+
+          <!-- TOP ROW -->
+          <div class="dashboard-top-row">
+            <!-- PLACEMENT STATUS -->
+            <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+              <div
+                style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; margin-top:12px;">
+                <span style="font-size:12px; font-weight:500; color:#2563eb; letter-spacing:0.3px;">Placement
+                  Status</span>
+                <div *ngIf="offerLetter$ | async as ol" style="display:inline-flex; align-items:center; gap:8px;">
+
+                  <!-- Upload Offer Letter -->
+                  <button *ngIf="!ol.uploaded" id="offer-letter-btn" (click)="triggerOfferLetterUpload()"
+                    style="display:inline-flex; align-items:center; gap:3px; background:none; border:none; cursor:pointer; color:#2563eb; font-size:11px; font-weight:500; font-family:'Inter',sans-serif; padding:0; line-height:1;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Upload Offer Letter
+                  </button>
+
+                  <!-- Offer Letter Uploaded -->
+                  <a *ngIf="ol.uploaded" [href]="ol.fileUrl" [download]="ol.fileName"
+                    style="display:inline-flex; align-items:center; gap:3px; background:none; border:none; cursor:pointer; color:#16a34a; font-size:11px; font-weight:500; font-family:'Inter',sans-serif; padding:0; line-height:1; text-decoration:none;"
+                    [title]="'Click to download (Current: ' + ol.fileName + ')'">
+                    Offer Letter Uploaded
+                  </a>
+
+                  <!-- Remove Button -->
+                  <button *ngIf="ol.uploaded" id="offer-letter-remove-btn" (click)="confirmRemoveOfferLetter()"
+                    style="display:inline-flex; align-items:center; background:none; border:none; cursor:pointer; color:#dc2626; padding:0;"
+                    title="Remove offer letter">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <input type="file" id="dashboard-offer-letter-input" accept=".pdf" style="display:none;"
+                  (change)="handleOfferLetterUpload($event)" />
+              </div>
+              <ng-container *ngIf="profile$ | async as profile">
+                <ng-container *ngIf="applications$ | async as apps">
+                  <ng-container *ngIf="profile.isPlaced; else showLatestApp">
+                    <p style="font-weight:600; font-size:15px; color:#111827;">
+                      Placed at {{ profile.placedCompany }}
+                    </p>
+                    <p style="font-size:13px; color:#6b7280; margin-top:2px;">
+                      {{ profile.placedRole }} • {{ profile.placedLpa }} LPA
+                    </p>
+                  </ng-container>
+                  <ng-template #showLatestApp>
+                    <ng-container *ngIf="apps && apps.length > 0; else noApps">
+                      <p style="font-weight:600; font-size:15px; color:#111827;">
+                        {{ apps[0].status === 'Applied' ? 'Applied at' : apps[0].status + ' at' }} {{ apps[0].company }}
+                      </p>
+                      <p style="font-size:13px; color:#6b7280; margin-top:2px;">
+                        {{ apps[0].title }} • {{ apps[0].lpa }} LPA
+                      </p>
+                    </ng-container>
+                    <ng-template #noApps>
+                      <p style="font-weight:600; font-size:15px; color:#111827;">
+                        No Applications Yet
+                      </p>
+                      <p style="font-size:13px; color:#6b7280; margin-top:2px;">
+                        Opted-in for Placement
+                      </p>
+                    </ng-template>
+                  </ng-template>
+                </ng-container>
+              </ng-container>
+            </div>
+
+            <!-- ACTIVE APPLICATIONS COUNT -->
+            <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+              <p style="font-size:12px; font-weight:600; color:#1D1D1F; margin-bottom:12px; margin-top:12px;">Active
+                Applications</p>
+              <p style="font-size:36px; font-weight:650; color:#111827; line-height:1;">
+                {{ getActiveApplicationsCount(applications$ | async) }}
+              </p>
+            </div>
+
+            <!-- REMINDERS -->
+            <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+              <p style="font-size:11px; font-weight:600; color:#1D1D1F; margin-bottom:12px;">Reminders</p>
+
+              <div style="max-height: 120px; overflow-y: auto; padding-right: 8px;" class="custom-scrollbar">
+                <div *ngFor="let reminder of reminders$ | async; let last = last" class="reminder-flex"
+                  [style.border-bottom]="!last ? '1px solid #f3f4f6' : 'none'" [style.padding-top]="!last ? '0' : '8px'"
+                  [style.padding-bottom]="!last ? '8px' : '0'" [style.margin-bottom]="!last ? '8px' : '0'"
+                  style="display:flex; align-items:flex-start; justify-content:space-between;">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                      <span style="font-weight:600; font-size:13px; color:#111827;">{{reminder.company}}</span>
+                      <span class="badge-upcoming"
+                        style="font-size:11px; font-weight:500; padding:2px 8px; border-radius:20px;">
+                        {{reminder.type}}
+                      </span>
+                    </div>
+                    <p style="font-size:13px; color:#6b7280;">{{reminder.title}}</p>
+                  </div>
+                  <div class="reminder-date-wrap" style="text-align:right; flex-shrink:0; margin-left:16px;">
+                    <p style="font-size:11px; color:#9ca3af; margin-bottom:4px;">Drive Date</p>
+                    <div
+                      style="display:flex; align-items:center; gap:4px; font-size:13px; font-weight:500; color:#1D1D1F;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <path d="M16 2v4M8 2v4M3 10h18" />
+                      </svg>
+                      {{reminder.date}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p *ngIf="(reminders$ | async)?.length === 0" style="font-size:12px; color:#9ca3af;">No upcoming
+                reminders.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM ROW -->
+          <div class="dashboard-bottom-row">
+
+            <!-- MY APPLICATIONS TABLE -->
+            <div style="display: flex; flex-direction: column; flex: 1;">
+              <h2 style="font-size:14px; font-weight:600; color:#111827; margin-bottom: 12px;">My Applications</h2>
+              <div class="card" style="overflow:hidden; display: flex; flex-direction: column;">
+                <div class="tbl-header"
+                  style="display:grid; grid-template-columns:1fr 180px 140px; padding:12px 20px; border-bottom:1px solid #f3f4f6; background:#f9fafb;">
+                  <span style="font-size:11px; font-weight:500; color:#9ca3af;">
+                    Company & Role
+                  </span>
+                  <span style="font-size:11px; font-weight:500; color:#9ca3af;">
+                    Date
+                  </span>
+                  <span style="font-size:11px; font-weight:500; color:#9ca3af; text-align:right;">
+                    Status
+                  </span>
+                </div>
+
+                <div *ngFor="let app of applications$ | async" class="tbl-row"
+                  style="display:grid; grid-template-columns:1fr 180px 140px; align-items:center; padding:16px 20px;">
+                  <div>
+                    <p style="font-weight:600; font-size:12px; color:#111827;">{{app.company}}</p>
+                    <p style="font-size:11px; color:#9ca3af; margin-top:2px;">{{app.title}}</p>
+                  </div>
+                  <span style="font-size:12px; color:#6b7280;">{{app.dateApplied}}</span>
+                  <div style="text-align:right;">
+                    <span [class.badge-selected]="app.status === 'Selected'"
+                      [class.badge-progress]="app.status === 'In Progress'"
+                      [class.badge-notselected]="app.status === 'Not Selected'"
+                      [class.badge-upcoming]="app.status === 'Upcoming Drive'"
+                      style="font-size:10px; font-weight:600; padding:4px 10px; border-radius:20px; display:inline-block;">
+                      {{app.status}}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LATEST DRIVE PREVIEW -->
+            <div *ngIf="latestDrive">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <h2 style="font-size:14px; font-weight:600; color:#111827;">Latest Drives</h2>
+                <button (click)="goToAllDrives()"
+                  style="background:none; border:none; cursor:pointer; color:#2563eb; font-size:13px; font-weight:500; display:flex; align-items:center; gap:3px; padding:0;">
+                  Go to All Drives
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="card" (click)="goToAllDrives()"
+                style="padding:24px; display:flex; flex-direction:column; justify-content:center; cursor:pointer;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:4px;">
+                  <div>
+                    <p style="font-weight:600; font-size:13px; color:#111827;">{{latestDrive.title}}</p>
+                    <p style="font-size:12px; color:#6b7280; margin-top:2px;">
+                      {{latestDrive.company}}
+                      <span *ngIf="latestDrive.location"
+                        style="margin-left:4px; border-left:1px solid #d1d5db; padding-left:4px;">
+                        {{latestDrive.location}}
+                      </span>
+                    </p>
+                  </div>
+                  <span class="lpa-badge" style="margin-left:12px;">{{latestDrive.lpa}} LPA</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px; margin-top:10px; color:#9ca3af; font-size:12px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                  Closes {{latestDrive.appCloses | date:'MMM d'}}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- BREADCRUMBS OUTSIDE MAIN CONTENT (EDIT PROFILE) -->
+    <div class="px-6 pt-4" *ngIf="isProfileModalOpen$ | async">
+      <lib-breadcrumbs-title [breadcrumbs]="profileBreadcrumbs" title="Placement Profile"></lib-breadcrumbs-title>
+    </div>
+
+    <!-- MAIN CONTAINER WITH 24px MARGIN (EDIT PROFILE) -->
+    <div class="px-6 pb-5 mt-2" style="margin-left: 24px; margin-right: 24px; margin-bottom: 24px; box-sizing: border-box;" *ngIf="isProfileModalOpen$ | async">
+      <main class="page-main" style="flex:1; overflow-y:auto; padding: 18px 8px 80px 8px;">
+        <div style="width: 100%; display: flex; flex-direction: column;" *ngIf="profile$ | async as profile">
+
+          <!-- Buttons Row Below Title -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 8px; margin-bottom: 24px;">
+            <button (click)="closeEditProfile()"
+              style="background:#fff; border:1px solid #d1d5db; cursor:pointer; font-size:13px; font-weight:500; color:#374151; padding:8px 18px; border-radius:8px;">Cancel</button>
+            <button (click)="saveProfile()"
+              style="background:#2563eb; color:#fff; font-size:13px; font-weight:500; padding:8px 18px; border-radius:8px; border:none; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              Save Profile
+            </button>
+          </div>
+
+          <div class="profile-grid" style="gap:16px; align-items:start;">
+
+            <!-- LEFT COLUMN -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="card" style="padding:20px; text-align:center;">
+                <div
+                  style="width:64px; height:64px; background:#dbeafe; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:26px; font-weight:600; color:#2563eb;">
+                  {{profile.name[0]}}
+                </div>
+                <p style="font-size:15px; font-weight:600; color:#111827; margin-bottom:2px;">{{profile.name}}</p>
+                <p style="font-size:12px; color:#6b7280; margin-bottom:10px;">{{profile.course}}</p>
+                <div
+                  style="display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:20px; padding:4px 12px;">
+                  <span style="font-size:11px; font-weight:600; color:#16a34a;">Opted-in for Placement</span>
+                </div>
+              </div>
+
+              <!-- ACADEMIC STANDINGS -->
+              <div class="card" style="padding:16px;">
+                <p
+                  style="font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:12px;">
+                  Academic Standing
+                </p>
+                <div style="display:flex; flex-direction:column; gap:9px;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="font-size:12px; color:#6b7280;">10th Score</span>
+                    <span style="font-size:12px; font-weight:500; color:#111827;">{{profile.score10th}}</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="font-size:12px; color:#6b7280;">12th Score</span>
+                    <span style="font-size:12px; font-weight:500; color:#111827;">{{profile.score12th}}</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="font-size:12px; color:#6b7280;">Aggregate / CGPA</span>
+                    <span style="font-size:12px; font-weight:500; color:#111827;">{{profile.cgpa}}</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="font-size:12px; color:#6b7280;">Attendance</span>
+                    <span style="font-size:12px; font-weight:500; color:#111827;">{{profile.attendance}}</span>
+                  </div>
+                </div>
+                <p style="font-size:10px; color:#9ca3af; margin-top:12px; line-height:1.5;">Academic records are synced
+                  directly from the university ERP.</p>
+              </div>
+
+              <!-- RESUME SECTION -->
+              <div class="card" style="padding:16px;" id="resume-card">
+                <p style="font-size:13px; font-weight:600; color:#111827; margin-bottom:12px;">Resume</p>
+
+                <!-- Upload Dropzone -->
+                <div *ngIf="!profile.resumeUploaded" id="resume-dropzone" class="upload-zone"
+                  [class.drag-over]="resumeDragOver" (click)="resumeFileInput.click()"
+                  (dragover)="onResumeDragOver($event)" (dragleave)="onResumeDragLeave($event)"
+                  (drop)="onResumeDrop($event)">
+                  <div
+                    style="width:40px; height:40px; background:#dbeafe; border-radius:10px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 16 12 12 8 16" />
+                      <line x1="12" y1="12" x2="12" y2="21" />
+                      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                    </svg>
+                  </div>
+                  <p style="font-size:13px; font-weight:600; color:#2563eb; margin-bottom:3px;">Upload Resume (PDF)</p>
+                  <p style="font-size:11px; color:#9ca3af;">Max 5MB</p>
+                </div>
+                <input #resumeFileInput type="file" id="resume-file-input" accept=".pdf" style="display:none;"
+                  (change)="handleResumeFileSelect($event)" />
+
+                <!-- Uploaded Preview -->
+                <div *ngIf="profile.resumeUploaded" id="resume-file-preview">
+                  <div
+                    style="display:flex; align-items:center; gap:10px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:12px;">
+                    <div class="resume-icon"
+                      style="background:#fee2e2; padding:8px; border-radius:6px; display:flex; align-items:center; justify-content:center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <p id="resume-filename"
+                        style="font-size:13px; font-weight:600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        {{profile.resumeFileName}}
+                      </p>
+                      <p id="resume-filesize" style="font-size:11px; color:#9ca3af;">Updated today</p>
+                    </div>
+                    <button (click)="confirmRemoveResume()"
+                      style="background:none; border:none; cursor:pointer; font-size:12px; font-weight:600; color:#dc2626; padding:0;">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="card" style="padding:20px;">
+                <p style="font-size:14px; font-weight:600; color:#111827; margin-bottom:16px;">Contact & Links</p>
+                <div class="contact-links-grid" style="gap:14px;">
+                  <div>
+                    <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Phone Number</p>
+                    <input class="ep-input" type="text" [(ngModel)]="editForm.phone" />
+                  </div>
+                  <div>
+                    <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Personal Email</p>
+                    <input class="ep-input" type="email" [(ngModel)]="editForm.email" />
+                  </div>
+                  <div>
+                    <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">LinkedIn Profile</p>
+                    <div style="position:relative;">
+                      <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#9ca3af;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                      </span>
+                      <input class="ep-input" type="text" [(ngModel)]="editForm.linkedin" style="padding-left:28px;" />
+                    </div>
+                  </div>
+                  <div>
+                    <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">GitHub / Portfolio</p>
+                    <div style="position:relative;">
+                      <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#9ca3af;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                      </span>
+                      <input class="ep-input" type="text" [(ngModel)]="editForm.github" style="padding-left:28px;" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card" style="padding:20px;">
+                <p style="font-size:14px; font-weight:600; color:#111827; margin-bottom:16px;">Professional Details</p>
+                <div style="margin-bottom:16px;">
+                  <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Technical Skills</p>
+                  <input class="ep-input" type="text" [(ngModel)]="editForm.skills" />
+                  <p style="font-size:11px; color:#9ca3af; margin-top:5px;">These skills will be matched against job
+                    requirements.</p>
+                </div>
+                <div style="margin-bottom:16px;">
+                  <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Key Projects</p>
+                  <textarea class="ep-textarea" placeholder="Briefly describe 1-2 major projects…"
+                    [(ngModel)]="editForm.projects" (input)="autoResize($event)"></textarea>
+                </div>
+                <div>
+                  <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Notable Achievements /
+                    Certifications</p>
+                  <textarea class="ep-textarea" placeholder="Enter your achievements/certifications"
+                    [(ngModel)]="editForm.achievements" (input)="autoResize($event)"></textarea>
+                </div>
+              </div>
+
+              <div class="card" style="padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <p style="font-size:14px; font-weight:600; color:#111827; margin:0;">Internship Details</p>
+                  <button (click)="addInternship()"
+                    style="background:none; border:none; color:#2563eb; font-size:12px; font-weight:600; cursor:pointer;">+
+                    Add</button>
+                </div>
+                <div *ngFor="let internship of editForm.internshipDetails; let i = index"
+                  style="background:#f9fafb; padding:12px; border-radius:8px; margin-bottom:12px; position:relative; border: 1px solid #e5e7eb;">
+                  <button (click)="removeInternship(i)"
+                    style="position:absolute; top:8px; right:8px; background:none; border:none; color:#dc2626; font-size:16px; font-weight:bold; cursor:pointer;">&times;</button>
+                  <div style="margin-bottom:12px;">
+                    <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Company Name</p>
+                    <input class="ep-input" type="text" [(ngModel)]="internship.companyName" />
+                  </div>
+                  <div style="margin-bottom:12px;">
+                    <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Location / Address</p>
+                    <input class="ep-input" type="text" [(ngModel)]="internship.location" />
+                  </div>
+                  <div style="display:flex; gap:12px;">
+                    <div style="flex:1;">
+                      <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Job Type</p>
+                      <select class="ep-input" [(ngModel)]="internship.jobType">
+                        <option value="Work from Office">Work from Office</option>
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="Remote">Remote</option>
+                      </select>
+                    </div>
+                    <div style="flex:1;">
+                      <p style="font-size:12px; font-weight:500; color:#1D1D1F; margin-bottom:6px;">Duration</p>
+                      <input class="ep-input" type="text" [(ngModel)]="internship.duration"
+                        placeholder="Enter internship duration" />
+                    </div>
+                  </div>
+                </div>
+                <p *ngIf="!editForm.internshipDetails || editForm.internshipDetails.length === 0"
+                  style="font-size:12px; color:#6b7280; margin:0;">No internships added yet.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+      <!-- ══ REMOVE RESUME CONFIRMATION MODAL ══ -->
+      <div *ngIf="showRemoveResumeModal" id="remove-resume-modal"
+        style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; align-items:center; justify-content:center;">
+        <div class="confirm-modal-box"
+          style="background:#fff; border-radius:16px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.15); text-align:center;">
+          <div
+            style="width:52px; height:52px; background:#fee2e2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+            </svg>
+          </div>
+          <p style="font-size:16px; font-weight:700; color:#111827; margin-bottom:8px;">Remove Resume?</p>
+          <p style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:24px;">
+            Are you sure you want to remove your uploaded resume?
+          </p>
+          <div style="display:flex; gap:10px;">
+            <button (click)="closeRemoveResumeConfirm()"
+              style="flex:1; background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:9px; font-size:13px; font-weight:500; color:#374151; cursor:pointer; font-family:'Inter',sans-serif;">
+              Cancel
+            </button>
+            <button (click)="removeResume()"
+              style="flex:1; background:#dc2626; color:#fff; border:none; border-radius:8px; padding:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif;">
+              Yes, Remove
+            </button>
+          </div>
+        </div>
+      </div>
+
+    <!-- ══ REMOVE OFFER LETTER CONFIRMATION MODAL ══ -->
+    <div *ngIf="showRemoveOfferModal" id="remove-offer-letter-modal"
+      style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; align-items:center; justify-content:center;">
+      <div class="confirm-modal-box"
+        style="background:#fff; border-radius:16px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.15); text-align:center;">
+        <div
+          style="width:52px; height:52px; background:#fee2e2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+          </svg>
+        </div>
+        <p style="font-size:16px; font-weight:700; color:#111827; margin-bottom:8px;">Remove Offer Letter?</p>
+        <p style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:24px;">
+          Are you sure you want to remove your uploaded offer letter?
+        </p>
+        <div style="display:flex; gap:10px;">
+          <button (click)="closeRemoveOfferLetterConfirm()"
+            style="flex:1; background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:9px; font-size:13px; font-weight:500; color:#374151; cursor:pointer; font-family:'Inter',sans-serif;">
+            Cancel
+          </button>
+          <button (click)="removeOfferLetter()"
+            style="flex:1; background:#dc2626; color:#fff; border:none; border-radius:8px; padding:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif;">
+            Yes, Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="profile.optedInStatus === 'opted_out'">
+    <div
+      style="display:flex; align-items:center; justify-content:center; flex:1; width:100%; height:100vh; text-align:center;">
+      <div>
+        <div style="font-size:48px; color:#ef4444; margin-bottom:16px;">⛔</div>
+        <h2 style="font-size:24px; font-weight:700; color:#1f2937;">Access Denied</h2>
+        <p style="font-size:14px; color:#6b7280; margin-top:8px;">You do not have access to the placement dashboard.</p>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="profile.optedInStatus === 'pending' || profile.optedInStatus === undefined">
+    <div class="bg-gray-100 text-slate-800 flex flex-col text-[13px] font-normal antialiased min-h-screen pb-48">
+
+      <!-- Main Content Container -->
+      <div class="w-full mx-auto flex-1 flex flex-col" style="max-width: 1024px; padding: 32px 16px 240px 16px;">
+
+        <!-- Breadcrumb -->
+        <lib-breadcrumbs-title [breadcrumbs]="registrationBreadcrumbs" title="Student Registration"></lib-breadcrumbs-title>
+
+        <!-- Form Card -->
+        <div class="bg-white shadow-sm flex-1 flex flex-col mb-24"
+          style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+
+          <!-- Blue Header Banner -->
+          <div class="bg-primary text-white relative" style="padding: 24px 32px;">
+            <div class="flex justify-between items-center relative z-10">
+              <div>
+                <h2 class="text-xl font-bold mb-1">Placement Registration Form</h2>
+                <p class="text-xs text-blue-100 m-0">Fill in all required details to complete your registration</p>
+              </div>
+              <div class="bg-white/20 px-4 py-1.5 rounded-full text-xs font-medium flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                Registration Open
+              </div>
+            </div>
+
+            <!-- Progress Bar Background -->
+            <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-800/30">
+              <div id="progressBar" class="h-full bg-white transition-all duration-300"
+                [style.width]="(currentStep / totalSteps * 100) + '%'"></div>
+            </div>
+          </div>
+
+          <!-- Form Body -->
+          <div class="flex-1 flex flex-col" style="padding: 32px 32px 64px 32px;">
+
+            <div class="flex justify-between items-center mb-6">
+              <div
+                class="text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-md border border-slate-100">
+                Step <span id="currentStepText" class="text-primary text-sm">{{ currentStep }}</span> of <span
+                  id="totalStepsText">{{ totalSteps }}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium">* All fields marked are required unless optional</div>
+            </div>
+
+            <form id="wizardForm" class="flex-1" onsubmit="event.preventDefault();">
+
+              <!-- STEP 1: PLACEMENT PREFERENCE -->
+              <div class="step-content" id="step-1" [class.active]="currentStep === 1">
+                <div class="section-divider">
+                  <span class="text-[11px] font-bold text-sectionTitle tracking-widest uppercase">Select Placement
+                    Preference</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 mb-8 mt-6">
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Opting For *</label>
+                    <select id="optingFor" name="opting_for" [(ngModel)]="registrationForm.optingFor"
+                      (change)="handleOptingForChange($event)" required
+                      class="w-full px-4 py-3 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M7%2010L12%2015L17%2010%22%20stroke%3D%22%2364748B%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-no-repeat bg-[position:right_10px_center]">
+                      <option value="" disabled selected>Select Preference</option>
+                      <option value="placement">Placement</option>
+                      <option value="higher_studies">Higher Studies</option>
+                      <option value="business">Own Business/Family Business</option>
+                      <option value="teaching">Teaching</option>
+                      <option value="govt">Government & other UPSC</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- STEP 2: TERMS, CONDITIONS & DECLARATION -->
+              <div class="step-content" id="step-2" [class.active]="currentStep === 2">
+                <div class="section-divider">
+                  <span class="text-[11px] font-bold text-sectionTitle tracking-widest uppercase">Terms & Condition and
+                    Declaration</span>
+                </div>
+
+                <!-- Row 1: Document Download (Left) and Upload (Right) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 mb-8" style="gap: 2rem;">
+                  <!-- Left Column: PDF Download -->
+                  <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-6 flex flex-col justify-between">
+                    <div>
+                      <h3 class="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                        Download Guidelines & Declaration Form
+                      </h3>
+                      <p class="text-xs text-slate-600 mb-6 leading-relaxed">
+                        Please download the official Terms & Condition and Declaration PDF form, read it carefully, and
+                        sign it before uploading.
+                      </p>
+                    </div>
+                    <div>
+                      <a [href]="declarationFileUrl" download="Declaration_Form" *ngIf="declarationFileUrl; else noFile"
+                        class="inline-flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 border border-slate-200 text-primary font-semibold text-xs rounded-lg shadow-sm transition-all">
+                        Download Declaration Form
+                      </a>
+                      <ng-template #noFile>
+                        <button disabled
+                          class="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 border border-slate-200 text-slate-400 font-semibold text-xs rounded-lg shadow-sm cursor-not-allowed">
+                          Declaration File Unavailable
+                        </button>
+                      </ng-template>
+                    </div>
+                  </div>
+
+                  <!-- Right Column: PDF Upload -->
+                  <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-6 flex flex-col justify-between">
+                    <div>
+                      <h3 class="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                        Upload Signed Guidelines & Declaration
+                      </h3>
+                      <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                        Upload the signed PDF copy of the guidelines and declaration form here.
+                      </p>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-primary uppercase tracking-wide">Upload Signed
+                        Declaration (PDF) *</label>
+                      <lib-file-upload accept=".pdf" width="100%" title="Upload Signed Declaration (PDF)" hint="Note: Name your file as rollno_name.pdf (Only PDF format allowed)" (fileChange)="onDeclarationFileChange($event)"></lib-file-upload>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Row 2: Terms & Conditions Checklist above the footer/info-box -->
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-6 mb-8">
+                  <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    Terms & Conditions Checklist
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 text-xs text-slate-600 cursor-pointer">
+                      <input type="checkbox" name="terms_guidelines" [(ngModel)]="registrationForm.termsGuidelines"
+                        required class="placement-req w-4 h-4 mt-0.5 accent-primary rounded border-slate-300">
+                      <span>I have read and agree to follow all placement rules and guidelines formulated by the CECR
+                        Placement Cell.</span>
+                    </label>
+                    <label class="flex items-start gap-3 text-xs text-slate-600 cursor-pointer">
+                      <input type="checkbox" name="terms_accuracy" [(ngModel)]="registrationForm.termsAccuracy" required
+                        class="placement-req w-4 h-4 mt-0.5 accent-primary rounded border-slate-300">
+                      <span>I confirm that all academic records and personal details in my profile are completely
+                        accurate.</span>
+                    </label>
+                    <label class="flex items-start gap-3 text-xs text-slate-600 cursor-pointer">
+                      <input type="checkbox" name="terms_attendance" [(ngModel)]="registrationForm.termsAttendance"
+                        required class="placement-req w-4 h-4 mt-0.5 accent-primary rounded border-slate-300">
+                      <span>I agree to maintain the required attendance and participate in all training sessions and
+                        interviews.</span>
+                    </label>
+                    <label class="flex items-start gap-3 text-xs text-slate-600 cursor-pointer">
+                      <input type="checkbox" name="terms_disqualification"
+                        [(ngModel)]="registrationForm.termsDisqualification" required
+                        class="placement-req w-4 h-4 mt-0.5 accent-primary rounded border-slate-300">
+                      <span>I understand that any discrepancy or misconduct will lead to immediate disqualification from
+                        placements.</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-[#f0f7ff] border border-blue-100 rounded-lg p-5 flex gap-4 mt-8">
+                  <div
+                    class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                    i</div>
+                  <div class="text-[13px] text-slate-700 leading-relaxed">
+                    By submitting this form, you confirm that all the information provided is accurate and complete. The
+                    Placement Cell will use this data strictly for placement activities.
+                  </div>
+                </div>
+              </div>
+
+              <!-- STEP 3: ACADEMIC & PERSONAL DETAILS -->
+              <div class="step-content" id="step-3" [class.active]="currentStep === 3">
+                <div class="section-divider">
+                  <span class="text-[11px] font-bold text-sectionTitle tracking-widest uppercase">Academic & Personal
+                    Profile</span>
+                </div>
+
+                <!-- Card 1: Contact & Personal Details -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+                  <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    Contact & Identity Details
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Personal Email
+                        *</label>
+                      <input type="email" name="personal_email" [(ngModel)]="registrationForm.personalEmail"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="email@example.com">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Mobile Number
+                        *</label>
+                      <input type="tel" name="mobile_number" [(ngModel)]="registrationForm.mobileNumber"
+                        pattern="[0-9]{10}"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="10-digit number">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Alternate Mobile
+                        Number</label>
+                      <input type="tel" name="alt_mobile_number" [(ngModel)]="registrationForm.altMobileNumber"
+                        class="w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Optional">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">PAN Card Number
+                        *</label>
+                      <input type="text" name="pan_card" [(ngModel)]="registrationForm.panCard"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="PAN Number">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Aadhar Card Number
+                        *</label>
+                      <input type="text" name="aadhar_card" [(ngModel)]="registrationForm.aadharCard"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="12-digit Aadhar">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Driving License
+                        Number</label>
+                      <input type="text" name="driving_license" [(ngModel)]="registrationForm.drivingLicense"
+                        class="w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Optional">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Blood Group *</label>
+                      <select name="blood_group" [(ngModel)]="registrationForm.bloodGroup"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors cursor-pointer">
+                        <option value="" disabled selected>Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2: Family & Address Details -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+                  <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    Family & Address Details
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Father's Name
+                        *</label>
+                      <input type="text" name="father_name" [(ngModel)]="registrationForm.fatherName"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Father's full name">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Father's Occupation
+                        *</label>
+                      <input type="text" name="father_occupation" [(ngModel)]="registrationForm.fatherOccupation"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Occupation">
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Present Address
+                        *</label>
+                      <textarea name="present_address" [(ngModel)]="registrationForm.presentAddress"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors h-20 resize-none"
+                        placeholder="Current residential address"></textarea>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Permanent Address
+                        *</label>
+                      <textarea name="permanent_address" [(ngModel)]="registrationForm.permanentAddress"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors h-20 resize-none"
+                        placeholder="Permanent address"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 3: Academic Records -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+                  <h3 class="text-sm font-bold text-slate-700 mb-6">
+                    Academic History
+                  </h3>
+
+                  <div class="flex flex-col gap-6">
+                    <!-- 1. SSLC / 10th Standard -->
+                    <div class="pb-6 border-b border-slate-100">
+                      <h4 class="text-xs font-bold text-primary mb-3 uppercase tracking-wider">SSLC / 10th Standard</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">SSLC / 10th
+                            Institution Name *</label>
+                          <input type="text" name="sslc_institution" [(ngModel)]="registrationForm.sslcInstitution"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="School name">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Location of 10th
+                            School *</label>
+                          <input type="text" name="sslc_location" [(ngModel)]="registrationForm.sslcLocation"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="City/State">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">% in SSLC / 10th
+                            *</label>
+                          <input type="number" step="0.01" name="sslc_percentage"
+                            [(ngModel)]="registrationForm.sslcPercentage"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="Enter your 10th percentage">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 2. 12th / PU Standard -->
+                    <div class="pb-6 border-b border-slate-100">
+                      <h4 class="text-xs font-bold text-primary mb-3 uppercase tracking-wider">12th / PU Standard</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">12th / PU
+                            Institution Name *</label>
+                          <input type="text" name="pu_institution" [(ngModel)]="registrationForm.puInstitution"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="College name">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Location of PU
+                            Institution *</label>
+                          <input type="text" name="pu_location" [(ngModel)]="registrationForm.puLocation"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="City/State">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">% in 12th / PU
+                            *</label>
+                          <input type="number" step="0.01" name="pu_percentage"
+                            [(ngModel)]="registrationForm.puPercentage"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="Enter your 12th percentage">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 3. Undergraduate Degree -->
+                    <div class="pb-6 border-b border-slate-100">
+                      <h4 class="text-xs font-bold text-primary mb-3 uppercase tracking-wider">Undergraduate Degree</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Degree Institution
+                            Name *</label>
+                          <input type="text" name="degree_institution" [(ngModel)]="registrationForm.degreeInstitution"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="College/University">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Location of Degree
+                            Institution *</label>
+                          <input type="text" name="degree_location" [(ngModel)]="registrationForm.degreeLocation"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="City/State">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">% in Degree
+                            (Consolidated % till 4th Sem) *</label>
+                          <input type="number" step="0.01" name="degree_percentage"
+                            [(ngModel)]="registrationForm.degreePercentage"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="Percentage">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Backlogs *</label>
+                          <select id="degreeBacklogs" name="degree_backlogs"
+                            [(ngModel)]="registrationForm.degreeBacklogs" (change)="toggleBacklogs($event)"
+                            class="placement-req w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors cursor-pointer">
+                            <option value="" disabled selected>Select</option>
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                          </select>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">If yes, how many
+                            backlogs</label>
+                          <input type="number" id="degreeBacklogsCount" name="degree_backlogs_count"
+                            [(ngModel)]="registrationForm.degreeBacklogsCount" disabled
+                            class="w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="0" min="0">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 4. Postgraduate Degree (Optional) -->
+                    <div>
+                      <h4 class="text-xs font-bold text-primary mb-3 uppercase tracking-wider">Postgraduate Degree
+                        (Optional)</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">PG Institution
+                            Name</label>
+                          <input type="text" name="pg_institution" [(ngModel)]="registrationForm.pgInstitution"
+                            class="w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="College/University">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">% in PG Degree
+                            (Consolidated % till 2nd Sem)</label>
+                          <input type="number" step="0.01" name="pg_percentage"
+                            [(ngModel)]="registrationForm.pgPercentage"
+                            class="w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="Percentage">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Backlog in
+                            PG</label>
+                          <select id="pgBacklogs" name="pg_backlogs" [(ngModel)]="registrationForm.pgBacklogs"
+                            (change)="togglePGBacklogs($event)"
+                            class="w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors cursor-pointer">
+                            <option value="" disabled selected>Select</option>
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                          </select>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">If yes, how many
+                            backlogs</label>
+                          <input type="number" id="pgBacklogsCount" name="pg_backlogs_count"
+                            [(ngModel)]="registrationForm.pgBacklogsCount" disabled
+                            class="w-full px-4 py-2 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                            placeholder="0" min="0">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 4: Internships, Experience & Resume Upload -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+                  <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    Experience & Resume Upload
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Do u have any work
+                        experience *</label>
+                      <select id="hasExperience" name="has_experience" [(ngModel)]="registrationForm.hasExperience"
+                        (change)="toggleExperience($event)"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors cursor-pointer">
+                        <option value="" disabled selected>Select</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Attendance Percentage
+                        *</label>
+                      <input type="number" step="0.01" name="attendance_percentage"
+                        [(ngModel)]="registrationForm.attendancePercentage"
+                        class="placement-req w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Enter your attendance percentage" min="0" max="100">
+                    </div>
+                  </div>
+
+                  <!-- Work Experience Fields (Company & Months) -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" id="experienceDetailsGroup"
+                    style="display: none;">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Company Name *</label>
+                      <input type="text" name="experience_company" [(ngModel)]="registrationForm.experienceCompany"
+                        class="w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Company Name">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Number of Months of
+                        Experience *</label>
+                      <input type="number" name="experience_months" [(ngModel)]="registrationForm.experienceMonths"
+                        class="w-full px-4 py-2.5 bg-inputBg border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                        placeholder="Enter experience in months" min="1">
+                    </div>
+                  </div>
+
+                  <!-- Guidelines Checkbox -->
+                  <div class="bg-slate-50 border border-slate-100 rounded-xl p-5 mb-6">
+                    <label class="flex items-start gap-3 text-xs text-slate-600 cursor-pointer">
+                      <input type="checkbox" name="will_adhere_cecr" [(ngModel)]="registrationForm.willAdhereCecr"
+                        class="placement-req w-4 h-4 mt-0.5 accent-primary rounded border-slate-300">
+                      <span class="font-semibold">I will adhere to all the CECR placement guidelines formulated by the
+                        Placement Cell. *</span>
+                    </label>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Upload your Resume (File
+                      Upload) *</label>
+                    <lib-file-upload accept=".pdf" width="100%" title="Upload your Resume" hint="Note: Name your file as rollno_name.pdf (Only PDF format allowed)" (fileChange)="onResumeFileChange($event)"></lib-file-upload>
+                  </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-[#f0f7ff] border border-blue-100 rounded-lg p-5 flex gap-4 mt-8">
+                  <div
+                    class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                    i</div>
+                  <div class="text-[13px] text-slate-700 leading-relaxed">
+                    By submitting this form, you confirm that all the information provided is accurate and complete. The
+                    Placement Cell will use this data strictly for placement activities.
+                  </div>
+                </div>
+              </div>
+
+            </form>
+
+            <!-- Footer Actions (Wizard Navigation) -->
+            <div class="flex justify-between items-center mt-10 pt-6 pb-6 border-t border-slate-100">
+              <lib-button label="Back" type="secondary" (onClick)="prevStep()" [customClass]="currentStep === 1 ? 'invisible min-w-[130px] px-8' : 'min-w-[130px] px-8'"></lib-button>
+              <lib-button [label]="getNextButtonText()" type="primary" customClass="min-w-[140px] px-8" (onClick)="nextStep()"></lib-button>
+            </div>
+
+          </div>
+        </div>
+
+
+      </div>
+
+
+      <!-- Success Modal -->
+      <div id="successModal" class="fixed inset-0 bg-black/50 items-center justify-center z-50"
+        [style.display]="showSuccessModal ? 'flex' : 'none'">
+        <div class="bg-white p-8 rounded-lg text-center max-w-sm shadow-xl">
+          <div
+            class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            ✓</div>
+          <h3 class="text-lg font-bold text-slate-800 mb-2">Registration Successful!</h3>
+          <p class="text-[13px] text-slate-600 mb-6">Your details have been saved to the database successfully.</p>
+          <lib-button label="Close" type="primary" customClass="w-full justify-center" (onClick)="closeModal()"></lib-button>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+</ng-container>

@@ -259,7 +259,7 @@ export class CompaniesComponent implements OnInit {
   }
 
   onSearchInput(): void {
-    this.searchSubject.next(this.searchQuery);
+    this.loadCompanies(this.searchQuery);
   }
 
   loadCompanies(query?: string): void {

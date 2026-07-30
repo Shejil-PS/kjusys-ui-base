@@ -477,11 +477,13 @@ export class DrivesComponent implements OnInit {
   }
 
   onSearchInput(): void {
-    this.searchSubject.next(this.searchQuery);
+    this.loadDrives(this.searchQuery);
   }
 
   onCandidateSearchInput(): void {
-    this.candidateSearchSubject.next(this.candidateSearchQuery);
+    if (this.activeDrive) {
+      this.loadCandidatesList(this.activeDrive.id, this.candidateSearchQuery);
+    }
   }
 
   loadDrives(query?: string): void {

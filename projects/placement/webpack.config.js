@@ -43,6 +43,10 @@ module.exports = {
           './CompaniesModule': './projects/placement/src/app/modules/companies/companies.module.ts',
           './DrivesModule': './projects/placement/src/app/modules/drives/drives.module.ts',
           './SettingsModule': './projects/placement/src/app/modules/settings/settings.module.ts',
+          './DashboardStudentModule': './projects/placement/src/app/modules/dashboard-student/dashboard-student.module.ts',
+          './DrivesStudentModule': './projects/placement/src/app/modules/drives-student/drives-student.module.ts',
+
+
 
 
 

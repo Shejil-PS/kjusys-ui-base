@@ -19,7 +19,7 @@
           <input type="text" placeholder="Search by company or role..."
             style="flex: 1 1 0%; min-width: 0; border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; padding-left: 16px; padding-right: 8px; height: 32px; font-size: 12px; color: #374151;"
             [(ngModel)]="searchQuery"
-            (input)="onSearchInput()" (keyup.enter)="onSearchInput()" />
+            (keyup.enter)="onSearchInput()" />
           <button type="button" (click)="onSearchInput()"
             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 9999px; background-color: #155DFC; color: #ffffff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; padding: 0;"
             aria-label="Search">
@@ -173,7 +173,7 @@
           <input type="text" placeholder="Search applicants by name..."
             style="flex: 1 1 0%; min-width: 0; border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; padding-left: 16px; padding-right: 8px; height: 32px; font-size: 12px; color: #374151;"
             [ngModel]="candidateSearchQuery" (ngModelChange)="filterCandidates($event || '')"
-            (input)="onCandidateSearchInput()" (keyup.enter)="onCandidateSearchInput()" />
+            (keyup.enter)="onCandidateSearchInput()" />
           <button type="button" (click)="onCandidateSearchInput()"
             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 9999px; background-color: #155DFC; color: #ffffff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; padding: 0;"
             aria-label="Search">

@@ -69,6 +69,28 @@ export const APP_ROUTES: Routes = [
                throw error;
             }),
       },
+      {
+        path: 'dashboard-student',
+        loadChildren: () =>
+          import('./modules/dashboard-student/dashboard-student.module')
+            .then((m) => m.DashboardStudentModule)
+            .catch((error) => {
+               console.error('Error loading DashboardStudentModule', error);
+               throw error;
+            }),
+      },
+      {
+        path: 'drives-student',
+        loadChildren: () =>
+          import('./modules/drives-student/drives-student.module')
+            .then((m) => m.DrivesStudentModule)
+            .catch((error) => {
+               console.error('Error loading DrivesStudentModule', error);
+               throw error;
+            }),
+      },
+
+
 
 
 

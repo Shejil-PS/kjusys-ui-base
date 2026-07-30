@@ -15,7 +15,8 @@
         type="text"
         class="kjt-search-input"
         [placeholder]="searchPlaceholder"
-        (input)="handleSearch($event)"
+        (input)="handleSearchInput($event)"
+        (keyup.enter)="triggerSearchEmit()"
       />
     </div>
 

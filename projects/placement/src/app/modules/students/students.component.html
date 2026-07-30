@@ -382,7 +382,7 @@
     <!-- Toolbar -->
     <div class="p-4 border-b border-gray-100 flex items-center justify-between gap-4">
       <div style="display: flex; align-items: center; justify-content: space-between; flex: 1 1 0%; max-width: 360px; min-width: 0; border-radius: 9999px; border: 2px solid #155DFC; padding: 2px; background: #ffffff; box-sizing: border-box;">
-        <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput()" (keyup.enter)="onSearchInput()"
+        <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="onSearchInput()"
           style="flex: 1 1 0%; min-width: 0; border: none !important; outline: none !important; box-shadow: none !important; background: transparent !important; padding-left: 16px; padding-right: 8px; height: 32px; font-size: 12px; color: #374151;"
           placeholder="Search by name or register number…" />
         <button type="button" (click)="onSearchInput()"

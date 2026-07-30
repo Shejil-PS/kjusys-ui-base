@@ -38,6 +38,20 @@
         "subPath": "placement/settings",
         "ngModuleName": "SettingsModule",
         "pinned": false
+      },
+      {
+        "exposedModule": "./DashboardStudentModule",
+        "displayName": "Dashboard Student",
+        "subPath": "placement/dashboard-student",
+        "ngModuleName": "DashboardStudentModule",
+        "pinned": false
+      },
+      {
+        "exposedModule": "./DrivesStudentModule",
+        "displayName": "Drives Student",
+        "subPath": "placement/drives-student",
+        "ngModuleName": "DrivesStudentModule",
+        "pinned": false
       }
     ]
   }

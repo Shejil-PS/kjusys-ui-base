@@ -383,7 +383,7 @@ export class StudentsComponent implements OnInit {
   }
 
   onSearchInput(): void {
-    this.searchSubject.next(this.searchQuery);
+    this.loadStudents(this.searchQuery);
   }
 
   loadStudents(query?: string): void {

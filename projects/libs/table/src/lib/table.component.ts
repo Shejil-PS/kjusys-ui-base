@@ -565,16 +565,23 @@ export class TableComponent implements OnInit, OnChanges {
 
   // ─── Search ────────────────────────────────────────────────────────────────
 
-  handleSearch(event: Event): void {
+  handleSearchInput(event: Event): void {
     const query = (event.target as HTMLInputElement).value;
     this.searchQuery = query;
-    this.pagination.currentPage = 1; // Always reset to page 1 on search
-
-    if (!this.clientPagination) {
-      // Emit to parent for server-side search
-      this.onSearch.emit(query);
+    if (this.clientPagination) {
+      this.pagination.currentPage = 1;
     }
-    // Client-side filtering is handled by the displayedData getter automatically
+  }
+
+  triggerSearchEmit(): void {
+    this.pagination.currentPage = 1;
+    if (!this.clientPagination) {
+      this.onSearch.emit(this.searchQuery);
+    }
+  }
+
+  handleSearch(event: Event): void {
+    this.handleSearchInput(event);
   }
 
   // ─── Date Range ────────────────────────────────────────────────────────────
