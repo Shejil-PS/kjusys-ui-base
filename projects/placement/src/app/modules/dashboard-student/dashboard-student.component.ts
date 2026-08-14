@@ -204,8 +204,10 @@ export function mapBackendToProfile(data: any): Profile {
     departmentName: data.departmentName_PlacementStudent_Text || data.departmentName || '',
     email: data.email_PlacementStudent_Text || data.email || '',
     batchCode: data.batchCode_PlacementStudent_Text || data.batchCode || '',
-    optedIn: parseBool(data.optedIn_PlacementStudent_Bool, parseBool(data.optedIn, false)),
-    optedInStatus: data.optInStatus || (data.optedIn === true || data.optedIn_PlacementStudent_Bool === true ? 'opted_in' : (data.optedIn === false || data.optedIn_PlacementStudent_Bool === false ? 'opted_out' : 'pending')),
+    optedIn: parseBool(data.optedIn_PlacementStudent_Bool, parseBool(data.optedIn, parseBool(data.placementOptIn, false))),
+    optedInStatus: (data.optedIn_PlacementStudent_Bool === true || data.optedIn === true || data.placementOptIn === true || data.optInStatus === 'opted_in')
+      ? 'opted_in'
+      : (data.optedIn_PlacementStudent_Bool === false || data.optedIn === false || data.optInStatus === 'opted_out' ? 'opted_out' : (data.optInStatus || 'pending')),
     placementOptIn: parseBool(data.optedIn_PlacementStudent_Bool, parseBool(data.optedIn, parseBool(data.placementOptIn, false))),
     cgpa: data.cgpa_PlacementStudent_Double ? data.cgpa_PlacementStudent_Double.toString() : (data.cgpa ? data.cgpa.toString() : '0'),
     course: data.specialization_PlacementStudent_Text || data.specialization || data.course || '',
@@ -284,27 +286,39 @@ export function evaluateDriveStatus(closeDateRaw: any, activeFlag?: boolean, raw
   let closeDateObj: Date | null = null;
   if (closeDateRaw instanceof Date) {
     closeDateObj = closeDateRaw;
+  } else if (typeof closeDateRaw === 'number') {
+    closeDateObj = new Date(closeDateRaw);
   } else if (typeof closeDateRaw === 'string') {
     const str = closeDateRaw.trim();
     if (!str) return 'open';
 
-    const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-    if (ddmmyyyyMatch) {
-      const day = parseInt(ddmmyyyyMatch[1], 10);
-      const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
-      const year = parseInt(ddmmyyyyMatch[3], 10);
-      closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+    if (!isNaN(Number(str)) && str.length > 4) {
+      closeDateObj = new Date(Number(str));
     } else {
-      const yyyymmddMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-      if (yyyymmddMatch) {
-        const year = parseInt(yyyymmddMatch[1], 10);
-        const month = parseInt(yyyymmddMatch[2], 10) - 1;
-        const day = parseInt(yyyymmddMatch[3], 10);
+      const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const p1 = parseInt(ddmmyyyyMatch[1], 10);
+        const p2 = parseInt(ddmmyyyyMatch[2], 10);
+        const year = parseInt(ddmmyyyyMatch[3], 10);
+        let day = p1;
+        let month = p2 - 1;
+        if (p1 <= 12 && p2 > 12) {
+          day = p2;
+          month = p1 - 1;
+        }
         closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
       } else {
-        const parsed = new Date(str);
-        if (!isNaN(parsed.getTime())) {
-          closeDateObj = parsed;
+        const yyyymmddMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (yyyymmddMatch) {
+          const year = parseInt(yyyymmddMatch[1], 10);
+          const month = parseInt(yyyymmddMatch[2], 10) - 1;
+          const day = parseInt(yyyymmddMatch[3], 10);
+          closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+        } else {
+          const parsed = new Date(str);
+          if (!isNaN(parsed.getTime())) {
+            closeDateObj = parsed;
+          }
         }
       }
     }
@@ -459,7 +473,7 @@ export class DashboardStudentComponent implements OnInit {
 
   // Add dummy observables so template doesn't crash if it looks for student switcher
   public students$: Observable<Profile[]> = new BehaviorSubject([]);
-  public activeStudentId$: Observable<string> = new BehaviorSubject('6a2b808f2cfa1b3892b73335');
+  public activeStudentId$: Observable<string> = new BehaviorSubject('6a7ecee9f7fc3c623045fb62');
 
   // Edit profile form state
   public editForm: Partial<Profile> = {};
@@ -518,7 +532,7 @@ export class DashboardStudentComponent implements OnInit {
     resumeFile: null
   };
 
-  private currentStudentId = '6a2b808f2cfa1b3892b73335'; // Mock active user ID
+  private currentStudentId = '6a7ecee9f7fc3c623045fb62'; // Mock active user ID
   public declarationFileUrl: string | SafeUrl = '';
 
   public dashBreadcrumbs: Breadcrumb[] = [
@@ -898,10 +912,12 @@ export class DashboardStudentComponent implements OnInit {
     };
 
     this.http.put(`${environment.baseUrl}/placements-app/update-student/${this.currentStudentId}`, payload).subscribe(() => {
-      const current = this.profileSubject.value;
-      if (current) {
-        this.profileSubject.next({ ...current, ...this.editForm });
-      }
+      this.http.get<any>(`${environment.baseUrl}/placements-app/get-student/${this.currentStudentId}`).pipe(
+        map(data => mapBackendToProfile(data))
+      ).subscribe(prof => {
+        this.profileSubject.next(prof);
+        this.cdr.detectChanges();
+      });
       this.profileModalOpenSubject.next(false);
       this.toastService.success('Profile saved successfully!');
     });
@@ -1197,10 +1213,12 @@ export class DashboardStudentComponent implements OnInit {
         this.toastService.success('Registration submitted successfully!');
         this.showSuccessModal = true;
 
-        const current = this.profileSubject.value;
-        if (current) {
-          this.profileSubject.next({ ...current, optedInStatus: optedInVal, optedIn: optedInVal === 'opted_in' });
-        }
+        this.http.get<any>(`${environment.baseUrl}/placements-app/get-student/${this.currentStudentId}`).pipe(
+          map(data => mapBackendToProfile(data))
+        ).subscribe(prof => {
+          this.profileSubject.next(prof);
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
         console.error('Failed to submit registration:', err);

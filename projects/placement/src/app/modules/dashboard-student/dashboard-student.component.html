@@ -1,5 +1,5 @@
 <ng-container *ngIf="profile$ | async as profile">
-  <ng-container *ngIf="profile.optedInStatus === 'opted_in'">
+  <ng-container *ngIf="profile.optedInStatus === 'opted_in' || profile.optedIn || profile.placementOptIn">
 
 
     <!-- BREADCRUMBS OUTSIDE MAIN CONTENT -->
@@ -522,7 +522,7 @@
     </div>
   </ng-container>
 
-  <ng-container *ngIf="profile.optedInStatus === 'opted_out'">
+  <ng-container *ngIf="!profile.optedIn && !profile.placementOptIn && profile.optedInStatus === 'opted_out'">
     <div
       style="display:flex; align-items:center; justify-content:center; flex:1; width:100%; height:100vh; text-align:center;">
       <div>
@@ -533,7 +533,7 @@
     </div>
   </ng-container>
 
-  <ng-container *ngIf="profile.optedInStatus === 'pending' || profile.optedInStatus === undefined">
+  <ng-container *ngIf="!profile.optedIn && !profile.placementOptIn && profile.optedInStatus !== 'opted_in' && profile.optedInStatus !== 'opted_out'">
     <div class="bg-gray-100 text-slate-800 flex flex-col text-[13px] font-normal antialiased min-h-screen pb-48">
 
       <!-- Main Content Container -->

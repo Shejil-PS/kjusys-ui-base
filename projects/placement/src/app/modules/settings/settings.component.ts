@@ -10,7 +10,7 @@ import { Breadcrumb } from '@libs/shared-ui';
   styleUrls: ['./settings.component.css']
 })
 export class SettingsComponent implements OnInit {
-  declarationId = '6a328fc07108b70d2b0c884a';
+  declarationId = '6a7ed0a56f234f67faabc114';
   declarationPath = '';
   isUpdating = false;
   selectedFile: File | null = null;
@@ -27,7 +27,7 @@ export class SettingsComponent implements OnInit {
     { label: 'Settings' }
   ];
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.fetchDeclaration();
@@ -64,7 +64,7 @@ export class SettingsComponent implements OnInit {
   updateDeclaration(): void {
     if (!this.selectedFile) return;
     this.isUpdating = true;
-    
+
     const reader = new FileReader();
     reader.readAsDataURL(this.selectedFile);
     reader.onload = () => {
@@ -72,7 +72,7 @@ export class SettingsComponent implements OnInit {
       const payload = {
         declarationForm_PlacementDeclare_Text: base64String
       };
-      
+
       this.http.put<any>(`${environment.baseUrl}/placements-app/update-declaration/${this.declarationId}`, payload).subscribe({
         next: (res) => {
           this.isUpdating = false;

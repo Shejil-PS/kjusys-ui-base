@@ -39,27 +39,39 @@ export class DrivesStudentComponent implements OnInit {
     let closeDateObj: Date | null = null;
     if (closeDateRaw instanceof Date) {
       closeDateObj = closeDateRaw;
+    } else if (typeof closeDateRaw === 'number') {
+      closeDateObj = new Date(closeDateRaw);
     } else if (typeof closeDateRaw === 'string') {
       const str = closeDateRaw.trim();
       if (!str) return 'open';
 
-      const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-      if (ddmmyyyyMatch) {
-        const day = parseInt(ddmmyyyyMatch[1], 10);
-        const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
-        const year = parseInt(ddmmyyyyMatch[3], 10);
-        closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+      if (!isNaN(Number(str)) && str.length > 4) {
+        closeDateObj = new Date(Number(str));
       } else {
-        const yyyymmddMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-        if (yyyymmddMatch) {
-          const year = parseInt(yyyymmddMatch[1], 10);
-          const month = parseInt(yyyymmddMatch[2], 10) - 1;
-          const day = parseInt(yyyymmddMatch[3], 10);
+        const ddmmyyyyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+        if (ddmmyyyyMatch) {
+          const p1 = parseInt(ddmmyyyyMatch[1], 10);
+          const p2 = parseInt(ddmmyyyyMatch[2], 10);
+          const year = parseInt(ddmmyyyyMatch[3], 10);
+          let day = p1;
+          let month = p2 - 1;
+          if (p1 <= 12 && p2 > 12) {
+            day = p2;
+            month = p1 - 1;
+          }
           closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
         } else {
-          const parsed = new Date(str);
-          if (!isNaN(parsed.getTime())) {
-            closeDateObj = parsed;
+          const yyyymmddMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+          if (yyyymmddMatch) {
+            const year = parseInt(yyyymmddMatch[1], 10);
+            const month = parseInt(yyyymmddMatch[2], 10) - 1;
+            const day = parseInt(yyyymmddMatch[3], 10);
+            closeDateObj = new Date(year, month, day, 23, 59, 59, 999);
+          } else {
+            const parsed = new Date(str);
+            if (!isNaN(parsed.getTime())) {
+              closeDateObj = parsed;
+            }
           }
         }
       }
@@ -100,7 +112,7 @@ export class DrivesStudentComponent implements OnInit {
     ];
   }
 
-  private currentStudentId = '6a2b808f2cfa1b3892b73335';
+  private currentStudentId = '6a7ecee9f7fc3c623045fb62';
 
   constructor(
     private http: HttpClient,
